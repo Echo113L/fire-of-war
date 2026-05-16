@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>穿越战火的归途</title>
+<style>
+/* ========== 全局重置与变量 ========== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0a0a;--text:#e0e0e0;--text-muted:#888;
+  --red:#c0392b;--red-glow:#e74c3c;--blue:#2980b9;
+  --gold:#d4a574;--overlay:rgba(0,0,0,0.7);
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --font:"PingFang SC","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  --transition:0.6s cubic-bezier(0.22,1,0.36,1);
+  --vh:1vh;
+  --app-w:414px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--text);font-family:var(--font);font-size:16px}
+#app{width:100%;max-width:var(--app-w);height:100%;position:relative;overflow:hidden;margin:0 auto}
+
+/* ========== 场景通用 ========== */
+.scene{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;z-index:1;
+}
+.scene.active{display:flex;z-index:10}
+.scene.fade-in{animation:sceneIn var(--transition) forwards}
+@keyframes sceneIn{from{opacity:0;transform:scale(1.05)}to{opacity:1;transform:scale(1)}}
+
+.scene-title{
+  font-size:0.75rem;letter-spacing:0.2em;color:var(--text-muted);
+  position:absolute;top:calc(0.8rem + var(--safe-top));left:50%;transform:translateX(-50%);
+  z-index:20;text-transform:uppercase;opacity:0.6;
+}
+/* 进度条 */
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:2px;z-index:100;background:rgba(255,255,255,0.08)}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width 0.6s ease;width:0%}
+
+/* 底部导航 */
+.next-arrow{
+  position:absolute;bottom:calc(1.2rem + var(--safe-bottom));left:50%;transform:translateX(-50%);
+  width:2.4rem;height:2.4rem;border:1.5px solid var(--text-muted);border-radius:50%;
+  background:transparent;color:var(--text-muted);font-size:1rem;line-height:1;
+  cursor:pointer;z-index:20;display:flex;align-items:center;justify-content:center;
+  animation:bounceDown 2s infinite;transition:all 0.3s;font-family:var(--font);
+  opacity:0;pointer-events:none;transition:opacity 0.3s,transform 0.3s;
+}
+.next-arrow.show{opacity:1;pointer-events:auto}
+.next-arrow:hover{border-color:var(--text);color:var(--text)}
+@keyframes bounceDown{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInOut{0%,100%{opacity:0.3}50%{opacity:0.8}}
+
+/* ========== 开场（视差背景+实景图） ========== */
+#scene-intro{
+  background:#000;text-align:center;padding:2rem;position:relative;overflow:hidden;
+}
+#scene-intro .intro-bg{
+  position:absolute;top:-5%;left:-5%;width:110%;height:110%;
+  background:url('H5图片素材/1-1.webp') center/cover no-repeat;
+  transition:transform 0.1s linear;will-change:transform;
+}
+#scene-intro .intro-overlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,0.4),rgba(0,0,0,0.75));
+}
+#scene-intro .intro-content{position:relative;z-index:5;}
+#scene-intro h1{
+  font-size:clamp(1.3rem,4vw,2.2rem);font-weight:700;letter-spacing:0.1em;
+  background:linear-gradient(135deg,var(--gold),#f0e6d3);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;margin-bottom:1.5rem;white-space:nowrap;
+}
+#scene-intro .tagline{font-size:clamp(0.75rem,2vw,0.95rem);color:var(--text-muted);line-height:2;max-width:28rem;margin:0 auto 2rem;opacity:0.7;}
+.start-btn{
+  padding:0.9rem 2.8rem;border:1px solid var(--gold);border-radius:3rem;
+  background:transparent;color:var(--gold);font-size:1rem;letter-spacing:0.2em;
+  cursor:pointer;transition:all 0.4s;font-family:var(--font);
+}
+.start-btn:hover,.start-btn:active{background:var(--gold);color:#0a0a0a}
+.credit{position:absolute;bottom:calc(1.5rem + var(--safe-bottom));font-size:0.65rem;color:var(--text-muted);opacity:0.35;}
+
+/* ========== 相册 - 手拿手机 1-2.webp 叠加相册区域 ========== */
+#scene-album{background:#000;padding:0;position:relative;}
+/* 手拿手机的照片图 */
+.album-phone-img{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:100%;height:100%;object-fit:cover;object-position:center;
+  z-index:0;pointer-events:none;user-select:none;
+}
+/* 手机屏幕区域（JS精确定位到照片里手机白屏位置） */
+.album-screen-area{
+  position:absolute;overflow:hidden;border-radius:6px;z-index:1;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05);
+  transform:rotate(-3deg);transform-origin:center center;
+}
+/* 照片轨道 */
+.album-track{display:flex;flex-direction:row;height:100%;}
+.album-photo{
+  width:100%;flex-shrink:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:0.5rem;text-align:center;position:relative;
+}
+.album-photo img{max-width:100%;max-height:70%;object-fit:contain;border-radius:4px;}
+.photo-icon{font-size:1.8rem;margin-bottom:0.3rem;flex-shrink:0;}
+.photo-caption{display:none;}
+/* 滑动提示 */
+.album-hint{position:absolute;bottom:calc(0.8rem + var(--safe-bottom));font-size:0.65rem;color:var(--text-muted);opacity:0.5;animation:fadeInOut 2s infinite;z-index:5;}
+/* 照片背景 */
+.photo-bg-0{background:linear-gradient(135deg,#2d1b00,#4a2c0a);position:relative}
+.photo-bg-0::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(255,200,100,0.08),transparent 60%);pointer-events:none}
+.photo-bg-1{background:linear-gradient(135deg,#1a2d3d,#2c4a6a);position:relative}
+.photo-bg-1::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 70% 30%,rgba(100,200,255,0.06),transparent 60%);pointer-events:none}
+.photo-bg-2{background:linear-gradient(135deg,#1a1a2e,#2a2a4e);position:relative}
+.photo-bg-2::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 60%,rgba(100,100,200,0.06),transparent 60%);pointer-events:none}
+.photo-bg-3{background:linear-gradient(135deg,#2a0a0a,#4a0a0a);position:relative}
+.photo-bg-3::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 50%,rgba(200,50,50,0.1),transparent 70%);pointer-events:none}
+/* 容器 */
+.album-container{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;}
+
+/* ========== 新闻推送（白底） ========== */
+#scene-news{background:#0d0d0d;padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.news-container{width:100%;margin:0 auto;display:flex;flex-direction:column;gap:0.4rem;overflow-y:auto;flex:1;}
+.news-card{
+  background:#fff;border:1px solid #e5e5ea;border-radius:10px;padding:0.9rem 1.1rem;
+  transform:translateY(24px);opacity:0;transition:all 0.5s cubic-bezier(0.22,1,0.36,1);
+  border-left:3px solid var(--red);cursor:default;
+  box-shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+.news-card.show{transform:translateY(0);opacity:1}
+.news-card .nt{font-size:0.65rem;color:#8e8e93;margin-bottom:0.25rem}
+.news-card .nh{font-size:0.85rem;font-weight:600;line-height:1.5;color:#1c1c1e}
+.news-card .ns{font-size:0.65rem;color:#8e8e93;margin-top:0.3rem}
+.news-glow{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.5s ease;
+  background:radial-gradient(ellipse at center,rgba(192,57,43,0.06),transparent 70%);}
+.news-glow.active{opacity:1}
+.news-shake{animation:shake 0.15s ease 3}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+/* 新闻页标题覆盖 */
+#scene-news .scene-title{color:#8e8e93}
+#scene-news .next-arrow{border-color:#c7c7cc;color:#8e8e93}
+
+/* ========== 拨号 · iPhone 通话页 ========== */
+#scene-dial{background:#0d0d0d;padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dial-wrap{text-align:center;width:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding-top:1.5rem;}
+.avatar-box{margin-bottom:2rem;}
+.avatar-box .av{width:4.5rem;height:4.5rem;border-radius:50%;background:linear-gradient(135deg,#555,#777);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 0.8rem;}
+.avatar-box .an{font-size:1.2rem;font-weight:400;color:#fff;letter-spacing:0.05em;}
+.avatar-box .ar{font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.2rem;}
+.dial-num{font-size:1.5rem;letter-spacing:0.15em;font-weight:300;margin:1rem 0;color:#fff;}
+.dial-btn{
+  width:4.2rem;height:4.2rem;border-radius:50%;border:none;
+  background:#34c759;color:#fff;font-size:1.5rem;
+  cursor:pointer;transition:all 0.2s;
+  margin:1.5rem auto;display:block;
+}
+.dial-btn:active{transform:scale(0.92);opacity:0.8}
+.dial-btn.done{opacity:0.35;pointer-events:none}
+.dial-status{font-size:0.85rem;color:rgba(255,255,255,0.6);min-height:1.5rem;transition:all 0.3s;}
+.dial-status.err{color:#ff453a}
+.dial-status.ok{color:#30d158}
+.blood-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;
+  pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at center,rgba(120,20,20,0.5),rgba(0,0,0,0.85));
+  transition:opacity 2.5s ease;
+}
+.blood-overlay.show{opacity:1}
+
+/* ========== 卡片轮播（视差滑动） ========== */
+#scene-carousel{background:#0d0d0d;padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.carousel-wrap{width:100%;height:100%;position:relative;overflow:hidden;padding-top:1.8rem;}
+/* 视差背景层 */
+.carousel-bg{
+  position:absolute;top:0;left:0;width:120%;height:100%;
+  background:linear-gradient(135deg,#1a1a1a 0%,#2a1a1a 50%,#1a1a1a 100%);
+  z-index:0;transition:transform 0.35s ease;will-change:transform;
+}
+/* 卡片轨道 */
+.carousel-track{display:flex;height:100%;position:relative;z-index:1;transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);will-change:transform;}
+.carousel-card{
+  flex:0 0 100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:1rem;position:relative;
+}
+.carousel-card img,.carousel-card video{
+  max-width:100%;max-height:75%;object-fit:contain;border-radius:12px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.6);
+}
+.card-label{
+  margin-top:0.8rem;font-size:0.8rem;color:var(--gold);font-weight:600;
+  text-align:center;padding:0.4rem 1rem;
+  background:rgba(0,0,0,0.5);border-radius:1rem;letter-spacing:0.05em;
+}
+/* 指示点 */
+.carousel-dots{
+  position:absolute;bottom:calc(3rem + var(--safe-bottom));
+  left:50%;transform:translateX(-50%);display:flex;gap:0.5rem;z-index:5;
+}
+.carousel-dots .dot{
+  width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);
+  transition:all 0.3s;
+}
+.carousel-dots .dot.active{background:var(--gold);transform:scale(1.4)}
+
+/* ========== 发送邮件（信封变机票） ========== */
+#scene-letter{background:#0d0d0d;padding:1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.mail-wrap{width:min(90%,380px);text-align:center;position:relative;max-height:100%;overflow-y:auto;}
+/* 邮件Form */
+.mail-form{background:#1c1c1e;border-radius:10px;padding:1.2rem;margin-bottom:1rem;text-align:left;}
+.mail-field{margin-bottom:0.8rem;}
+.mail-field label{display:block;font-size:0.65rem;color:#8e8e93;margin-bottom:0.2rem;text-transform:uppercase;}
+.mail-field input,.mail-field textarea{
+  width:100%;padding:0.5rem 0.7rem;border:1px solid #3a3a3c;border-radius:6px;
+  background:#2c2c2e;color:#fff;font-size:0.8rem;font-family:var(--font);outline:none;resize:none;
+}
+.mail-field textarea{height:5rem;line-height:1.5;}
+.mail-field input:focus,.mail-field textarea:focus{border-color:var(--blue)}
+.mail-btns{display:flex;gap:0.6rem;justify-content:flex-end;margin-top:0.8rem;}
+.mail-btns button{padding:0.5rem 1.4rem;border-radius:1.5rem;font-size:0.8rem;cursor:pointer;font-family:var(--font);transition:all 0.3s;}
+.mail-send{background:var(--blue);color:#fff;border:none;}
+.mail-send:hover,.mail-send:active{background:#3498db}
+.mail-cancel{background:transparent;color:#8e8e93;border:1px solid #3a3a3c;}
+.mail-cancel:hover{background:rgba(255,255,255,0.05)}
+/* 信封动画 */
+.env-stage{display:none;position:relative;width:100%;height:16rem;align-items:center;justify-content:center;}
+.env-stage.active{display:flex}
+.env-icon{font-size:5rem;transition:all 0.6s cubic-bezier(0.22,1,0.36,1);position:relative;z-index:2;}
+.env-icon.closing{animation:envClose 0.6s ease forwards;}
+@keyframes envClose{
+  0%{transform:scale(1)}
+  40%{transform:scaleY(0.1) scaleX(1.2)}
+  70%{transform:scaleY(0.1) scaleX(0.6) rotate(10deg)}
+  100%{transform:scale(1) rotate(0deg)}
+}
+.env-ticket{
+  display:none;position:absolute;padding:1.2rem;border-radius:8px;
+  background:linear-gradient(135deg,#2a3a5a,#4a6a8a);color:#fff;
+  font-size:0.85rem;letter-spacing:0.08em;line-height:1.8;text-align:center;
+  animation:fadeIn 0.5s ease;z-index:3;width:80%;max-width:300px;
+}
+.env-ticket.show{display:block}
+.env-ticket .tk-flight{font-size:1rem;font-weight:600;color:var(--gold)}
+.env-ticket .tk-info{font-size:0.7rem;opacity:0.7;margin-top:0.3rem}
+
+/* ========== 机场（深夜浦东机场实景） ========== */
+#scene-airport{background:#000;padding:0;position:relative}
+#scene-airport::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(0,0,0,0.1),rgba(0,0,0,0.4));z-index:1;pointer-events:none}
+#scene-airport .scene-title{z-index:5}
+.apt-bg{position:absolute;top:0;left:0;width:100%;height:100%;background:url('H5图片素材/深夜浦东机场.webp') center/cover no-repeat;z-index:0;}
+.apt-wrap{text-align:center;max-width:360px;width:100%;position:relative;z-index:3;padding:1rem;}
+.apt-msg{background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:0.9rem;margin-bottom:0.8rem;text-align:left;}
+.apt-msg .sdr{font-size:0.65rem;color:var(--text-muted);margin-bottom:0.2rem}
+.apt-msg .txt{font-size:0.82rem;line-height:1.6;color:#eee}
+.apt-msg .lnk{display:inline-block;color:var(--blue);text-decoration:underline;cursor:pointer;font-size:0.75rem;margin-top:0.2rem;}
+.apt-board{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.8rem;margin-top:0.3rem;}
+.apt-board .flt{font-size:0.8rem;color:var(--gold);letter-spacing:0.08em;font-weight:300}
+.apt-dip{display:none;margin-top:0.8rem;padding:0.7rem;background:rgba(41,128,185,0.15);border-radius:6px;border:1px solid rgba(41,128,185,0.3)}
+.apt-dip.show{display:block;animation:fadeIn 0.4s ease}
+.apt-dip .dt{font-size:0.8rem;line-height:1.6;color:#fff}
+
+/* ========== 边境（土耳其难民营实景） ========== */
+#scene-camp{background:#000;padding:0;overflow:hidden}
+.camp-wrap{width:100%;height:100%;position:relative;}
+.camp-bg{width:100%;height:100%;position:relative;background:url('H5图片素材/土耳其难民营.webp') center/cover no-repeat;}
+.camp-bg::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(0,0,0,0.05),rgba(0,0,0,0.25));}
+.camp-scene{width:100%;height:100%;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.camp-dot{position:absolute;width:3.5rem;height:3.5rem;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;background:rgba(0,0,0,0.3);animation:pulseDot 2s infinite;}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(212,165,116,0.4)}50%{box-shadow:0 0 0 8px rgba(212,165,116,0)}}
+.camp-dot:hover,.camp-dot.active{border-color:var(--gold);background:rgba(212,165,116,0.15)}
+.camp-dot .dl{font-size:0.5rem;color:rgba(255,255,255,0.7);text-align:center;pointer-events:none}
+.camp-pop{
+  position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);width:90%;max-width:340px;
+  background:rgba(20,20,20,0.92);border:1px solid rgba(255,255,255,0.12);border-radius:10px;
+  padding:0.8rem 1rem;text-align:center;z-index:12;animation:fadeIn 0.35s ease;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:none;
+}
+.camp-pop .cp-t{font-size:0.8rem;color:var(--gold);font-weight:600;margin-bottom:0.2rem}
+.camp-pop .cp-d{font-size:0.72rem;color:var(--text-muted);line-height:1.5}
+.camp-label{position:absolute;bottom:0.5rem;left:0.5rem;font-size:0.6rem;color:var(--text-muted);opacity:0.4;}
+
+/* ========== 路障 ========== */
+#scene-rubble{background:#1a1a1a;padding:1rem}
+.rbl-wrap{text-align:center;max-width:380px;width:100%;}
+.rbl-txt{font-size:0.8rem;color:var(--text-muted);margin-bottom:0.8rem}
+.rbl-pile{width:100%;height:11rem;position:relative;cursor:pointer;background:linear-gradient(180deg,#333,#222);border-radius:10px;overflow:hidden;margin-bottom:0.8rem;}
+.rbl-p{position:absolute;width:1.8rem;height:1.8rem;background:#555;transform:rotate(var(--r,0deg));border-radius:2px;transition:opacity 0.25s,transform 0.25s;opacity:1;}
+.rbl-p.clr{opacity:0;transform:scale(0.4) rotate(var(--r,0deg))}
+.rbl-bar{width:100%;height:5px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-bottom:0.5rem;}
+.rbl-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px;transition:width 0.3s ease;width:0%;}
+.rbl-rem{font-size:0.75rem;color:var(--text-muted)}
+.rbl-done{display:none;padding:1rem;animation:fadeIn 0.5s ease;}
+.rbl-done .bp{width:6rem;height:6rem;margin:0 auto 0.8rem;background:linear-gradient(135deg,#3a3a3a,#4a4a4a);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border:2px solid #555;}
+.rbl-done p{font-size:0.85rem;color:var(--gold);}
+
+/* ========== 破损的家（全景拖拽） ========== */
+#scene-home{background:#0d0d0d;padding:0;overflow:hidden}
+.hm-wrap{width:100%;height:100%;position:relative;display:flex;flex-direction:column;}
+.pano-wrap{flex:1;position:relative;overflow:hidden;cursor:grab;}
+.pano-wrap:active{cursor:grabbing}
+.pano-img{
+  position:absolute;top:0;left:0;height:100%;
+  background:url('H5图片素材/破碎家中内景.webp') left center/auto 100% no-repeat;
+  will-change:transform;
+}
+/* 宽度由JS根据图片实际比例计算 */
+.pano-hotspot{
+  position:absolute;width:2.5rem;height:2.5rem;border-radius:50%;
+  background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.5);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  cursor:pointer;z-index:5;animation:panoPulse 2s infinite;
+  transform:translate(-50%,-50%);pointer-events:auto;
+}
+@keyframes panoPulse{0%,100%{box-shadow:0 0 0 0 rgba(212,165,116,0.5)}50%{box-shadow:0 0 0 6px rgba(212,165,116,0)}}
+.pano-hotspot.found{opacity:0.3;pointer-events:none;animation:none;border-color:rgba(255,255,255,0.15);}
+.hm-pop{
+  position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);width:90%;max-width:340px;
+  background:rgba(20,20,20,0.92);border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px;padding:0.8rem;animation:fadeIn 0.35s ease;z-index:20;display:none;
+}
+.hm-pop .hp-t{font-size:0.82rem;line-height:1.6;color:var(--text)}
+.hm-pop .hp-x{display:inline-block;margin-top:0.3rem;font-size:0.65rem;color:var(--text-muted);cursor:pointer;}
+.hm-prog{position:absolute;top:0.5rem;left:50%;transform:translateX(-50%);z-index:5;font-size:0.7rem;color:rgba(255,255,255,0.5);background:rgba(0,0,0,0.4);padding:0.3rem 0.8rem;border-radius:1rem;}
+
+/* ========== 晚餐（家人心声光点） ========== */
+#scene-dinner{background:#000;padding:0;position:relative}
+#scene-dinner::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:url('H5图片素材/餐桌前家人聚餐.webp') center/cover no-repeat;z-index:0;}
+#scene-dinner::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(0,0,0,0.05),rgba(0,0,0,0.3));z-index:1;pointer-events:none}
+.din-wrap{width:100%;height:100%;position:relative;z-index:3;}
+/* 提示文字 */
+.din-hint{position:absolute;top:1rem;left:50%;transform:translateX(-50%);z-index:8;font-size:0.72rem;color:rgba(255,255,255,0.55);animation:fadeInOut 2s infinite;text-align:center;white-space:nowrap;}
+/* 声波动画 */
+.din-wave{position:absolute;top:2.5rem;left:50%;transform:translateX(-50%);z-index:9;display:none;gap:3px;align-items:flex-end;height:2.5rem;}
+.din-wave.active{display:flex}
+.din-wave span{width:3px;background:var(--gold);border-radius:2px;animation:waveAnim 0.6s ease-in-out infinite;}
+.din-wave span:nth-child(1){height:10px;animation-delay:0s}
+.din-wave span:nth-child(2){height:20px;animation-delay:0.1s}
+.din-wave span:nth-child(3){height:14px;animation-delay:0.2s}
+.din-wave span:nth-child(4){height:24px;animation-delay:0.3s}
+.din-wave span:nth-child(5){height:8px;animation-delay:0.4s}
+@keyframes waveAnim{0%,100%{transform:scaleY(0.5);opacity:0.4}50%{transform:scaleY(1.2);opacity:1}}
+/* 人物光点 */
+.din-person{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:5;user-select:none;-webkit-user-select:none;}
+.dp-dot{width:1.2rem;height:1.2rem;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold),0 0 18px rgba(212,165,116,0.6);animation:dpPulse 2s infinite;}
+@keyframes dpPulse{0%,100%{box-shadow:0 0 6px var(--gold),0 0 12px rgba(212,165,116,0.4)}50%{box-shadow:0 0 12px var(--gold),0 0 28px rgba(212,165,116,0.8)}}
+/* 独白 */
+.din-mono{
+  display:none;position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  width:88%;max-width:340px;padding:1rem;border-left:3px solid var(--gold);
+  background:rgba(0,0,0,0.75);border-radius:0 6px 6px 0;text-align:left;
+  animation:fadeIn 0.5s ease;z-index:10;
+}
+.din-mono .dm-speaker{font-size:0.7rem;color:var(--gold);font-weight:600;margin-bottom:0.4rem;}
+.din-mono .dm-text{font-size:0.78rem;line-height:1.8;color:var(--text);font-style:italic;}
+
+/* ========== 空袭（实景背景） ========== */
+#scene-airraid{background:#000;padding:2rem;text-align:center;position:relative}
+#scene-airraid::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:url('H5图片素材/空袭.webp') center/cover no-repeat;z-index:0;filter:brightness(0.8);}
+.air-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.2);animation:airFlash 0.5s ease infinite alternate;pointer-events:none;z-index:1;display:none;}
+@keyframes airFlash{from{opacity:0.2}to{opacity:0.45}}
+.air-wrap{position:relative;z-index:2;max-width:360px;width:100%;}
+.air-txt{font-size:1.3rem;color:var(--red);font-weight:700;margin-bottom:1.5rem}
+.air-timer{font-size:2.5rem;font-weight:700;color:var(--red);margin-bottom:1rem}
+.air-btn{
+  width:7rem;height:7rem;border-radius:50%;background:var(--red);border:3px solid var(--red-glow);
+  color:#fff;font-size:1.1rem;font-weight:700;letter-spacing:0.08em;
+  cursor:pointer;box-shadow:0 0 40px rgba(231,76,60,0.4);animation:pulse 1s infinite;
+  font-family:var(--font);transition:opacity 0.3s;
+}
+.air-btn:active{transform:scale(0.93)}
+.air-btn.hide{display:none}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.air-res{display:none;padding:1.5rem;animation:fadeIn 0.5s ease;}
+.air-res .ar-t{font-size:1rem;color:var(--gold);margin-bottom:1rem}
+.air-msg{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:0.8rem;}
+.air-msg .sdr{font-size:0.65rem;color:var(--text-muted);margin-bottom:0.2rem}
+.air-msg .txt{font-size:0.82rem;line-height:1.6}
+
+/* ========== 尾声 ========== */
+#scene-epilogue{background:#000;padding:1.5rem;text-align:center}
+.ep-wrap{max-width:400px;width:100%;}
+.dp-i{margin-bottom:1rem;opacity:0;transform:translateY(16px);transition:all 0.7s cubic-bezier(0.22,1,0.36,1);}
+.dp-i.show{opacity:1;transform:translateY(0)}
+.dp-i .dn{font-size:clamp(1.8rem,5vw,2.8rem);font-weight:700;background:linear-gradient(135deg,var(--red),var(--red-glow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block;margin-bottom:0.1rem;}
+.dp-i .dl{font-size:0.78rem;color:var(--text-muted);line-height:1.4}
+.dp-src{font-size:0.55rem;color:var(--text-muted);opacity:0.35;margin-top:0.5rem;}
+
+.peace-sec{margin-top:1.5rem;opacity:0;transition:opacity 0.8s ease;}
+.peace-sec.show{opacity:1}
+.peace-sec .pt{font-size:0.85rem;color:var(--text);margin-bottom:0.6rem}
+.peace-sec .pi{width:100%;padding:0.7rem 1rem;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--text);font-size:0.85rem;text-align:center;font-family:var(--font);outline:none;}
+.peace-sec .pi:focus{border-color:var(--gold)}
+.peace-sec .pcnt{font-size:0.65rem;color:var(--text-muted);margin:0.3rem 0 0.5rem}
+.peace-sec .pb{padding:0.7rem 1.8rem;border:1px solid var(--gold);border-radius:2rem;background:transparent;color:var(--gold);font-size:0.85rem;cursor:pointer;transition:all 0.3s;font-family:var(--font);}
+.peace-sec .pb:hover,.peace-sec .pb:active{background:var(--gold);color:#000}
+
+.ext-lnk{display:block;margin-top:0.8rem;font-size:0.75rem;color:var(--blue);text-decoration:none;opacity:0.6;cursor:pointer;}
+.ext-lnk:hover{opacity:1}
+.final-cr{font-size:0.55rem;color:var(--text-muted);opacity:0.25;margin-top:1rem;}
+
+/* ========== 海报浮层 ========== */
+#poster-box{position:fixed;top:0;left:0;width:100%;height:100%;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.92);padding:1rem;flex-direction:column;}
+#poster-box.active{display:flex}
+#poster-img{max-width:100%;max-height:80vh;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,0.7);}
+.pa-acts{display:flex;gap:1rem;margin-top:1rem;}
+.pa-acts button{padding:0.6rem 1.4rem;border:1px solid rgba(255,255,255,0.25);border-radius:2rem;background:rgba(255,255,255,0.08);color:var(--text);font-size:0.8rem;cursor:pointer;font-family:var(--font);}
+.pa-acts button:hover{background:rgba(255,255,255,0.15)}
+
+/* ========== 加载 ========== */
+#loading-scrn{position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#loading-scrn .spinner{width:1.8rem;height:1.8rem;border:2px solid rgba(255,255,255,0.08);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:0.8rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-scrn .lt{font-size:0.7rem;color:var(--text-muted)}
+
+/* ========== 响应式 ========== */
+@media(min-width:768px){
+  .scene{padding:2rem}
+    .rbl-pile{height:14rem}
+  .camp-scene{max-width:500px;margin:0 auto}
+}
+@media(min-width:1024px){
+  body{background:#050505}
+  }
+@media(max-height:600px){
+    .rbl-pile{height:8rem}
+  .photo-icon{font-size:1.5rem}
+}
+/* ========== 通用 iPhone 手机框 ========== */
+.phone-frame{
+  width:min(78vw,320px);height:min(84vh,560px);
+  background:#0a0a0a;border-radius:44px;padding:10px;
+  position:relative;flex-shrink:0;
+  box-shadow:0 0 0 2px #2a2a2a,0 0 0 4px #1a1a1a,0 20px 60px rgba(0,0,0,0.7);
+}
+.phone-frame::before{
+  content:'';position:absolute;top:2px;left:2px;right:2px;bottom:2px;
+  border-radius:42px;border:1px solid rgba(255,255,255,0.04);pointer-events:none;
+}
+.phone-screen{
+  width:100%;height:100%;border-radius:34px;overflow:hidden;
+  background:#000;position:relative;display:flex;flex-direction:column;
+}
+.phone-island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:90px;height:26px;background:#0d0d0d;border-radius:14px;z-index:10;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+.pi-spkr{width:24px;height:4px;background:#1a1a1a;border-radius:2px;}
+.pi-cam{width:7px;height:7px;background:#1a1a2a;border:1px solid #2a2a3a;border-radius:50%;}
+/* 信件塞入漂流瓶动画 */
+.bottle-anim-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:300;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.85);}
+.bottle-anim-overlay.active{display:flex}
+.bottle-anim-scene{position:relative;width:10rem;height:12rem;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;}
+/* 瓶子 */
+.ba-bottle{position:relative;width:4rem;height:6rem;background:linear-gradient(135deg,rgba(200,220,240,0.7),rgba(150,180,210,0.5));border-radius:12px 12px 20px 20px;border:2px solid rgba(255,255,255,0.3);overflow:hidden;transition:transform 0.5s ease;z-index:1;}
+.ba-bottle::after{content:'';position:absolute;top:12px;left:8px;width:12px;height:24px;background:rgba(255,255,250,0.6);border-radius:2px;transform:rotate(-3deg);}
+.ba-cork{width:1.2rem;height:0.8rem;background:#8B6914;border-radius:2px 2px 0 0;margin-bottom:-1px;z-index:2;}
+/* 信封 */
+.ba-letter{position:absolute;top:-1rem;left:50%;transform:translateX(-50%);width:2.8rem;height:2rem;background:#f5efe6;border:1px solid #ddd;border-radius:3px;z-index:0;transition:all 0.5s cubic-bezier(0.22,1,0.36,1);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#8B6914;}
+.ba-letter.slide-in{top:0.5rem;opacity:0;transform:translateX(-50%) scale(0.3);}
+.ba-bottle.glow{box-shadow:0 0 20px rgba(212,165,116,0.6);}
+.ba-text{color:var(--gold);font-size:0.8rem;margin-top:1rem;animation:fadeIn 0.5s ease;}
+/* ========== 漂流瓶·海面 ========== */
+#scene-sea{background:linear-gradient(180deg,#020b18 0%,#061525 20%,#0a1e35 40%,#0e2848 65%,#123456 100%);padding:0;overflow:hidden;position:relative;}
+/* 月下光晕 */
+.sea-glow{position:absolute;top:5%;right:18%;width:10rem;height:10rem;border-radius:50%;background:radial-gradient(circle,rgba(254,243,199,0.08),rgba(254,243,199,0.02) 50%,transparent 70%);z-index:0;pointer-events:none;transform:translate(-30%,-30%);}
+/* 星空 */
+.sea-stars{position:absolute;top:0;left:0;width:100%;height:45%;z-index:0;pointer-events:none;}
+.sea-star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3s infinite;}
+@keyframes twinkle{0%,100%{opacity:0.15}50%{opacity:0.85}}
+/* 月亮 */
+.sea-moon{position:absolute;top:6%;right:14%;width:2.8rem;height:2.8rem;border-radius:50%;background:radial-gradient(circle at 55% 35%,#fef9e7,#fef3c7 30%,#e8c97a 90%);box-shadow:0 0 40px rgba(254,243,199,0.25),0 0 80px rgba(254,243,199,0.08);z-index:0;pointer-events:none;}
+/* 海面月光倒影 */
+.sea-reflection{position:absolute;bottom:18%;left:50%;transform:translateX(-50%);width:60%;height:3px;background:linear-gradient(90deg,transparent,rgba(254,243,199,0.2),rgba(254,243,199,0.4),rgba(254,243,199,0.2),transparent);border-radius:50%;z-index:1;pointer-events:none;animation:reflectShimmer 4s ease-in-out infinite;}
+@keyframes reflectShimmer{0%,100%{opacity:0.4;width:50%}50%{opacity:0.8;width:65%}}
+/* 海面波浪层 */
+.sea-waves{position:absolute;bottom:0;left:0;width:200%;height:45%;z-index:1;pointer-events:none;}
+.sea-wave{position:absolute;bottom:0;left:0;width:200%;height:100%;background:linear-gradient(180deg,rgba(14,40,72,0.5),rgba(10,30,55,0.8));border-radius:75% 70% 0 0;animation:waveDrift 8s ease-in-out infinite;}
+.sea-wave:nth-child(2){bottom:-8%;opacity:0.5;animation-duration:11s;animation-delay:-3s;border-radius:65% 80% 0 0;background:linear-gradient(180deg,rgba(18,45,80,0.4),rgba(8,25,48,0.75));}
+.sea-wave:nth-child(3){bottom:-4%;opacity:0.35;animation-duration:14s;animation-delay:-6s;border-radius:80% 65% 0 0;background:linear-gradient(180deg,rgba(12,36,65,0.45),rgba(6,20,40,0.7));}
+@keyframes waveDrift{0%,100%{transform:translateX(0) translateY(0)}50%{transform:translateX(-12%) translateY(-6px)}}
+/* 瓶子容器 */
+.sea-bottles{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;}
+.sea-bottle{position:absolute;cursor:pointer;display:flex;flex-direction:column;align-items:center;animation:floatBottle 4s ease-in-out infinite;transition:transform 0.2s;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));}
+.sea-bottle:active{transform:scale(1.2)}
+.sea-bottle .bt-cork{width:10px;height:6px;background:#6b5010;border-radius:2px 2px 0 0;}
+.sea-bottle .bt-body{width:24px;height:34px;background:linear-gradient(135deg,rgba(180,210,240,0.65),rgba(140,170,210,0.45));border-radius:6px 6px 12px 12px;border:1px solid rgba(255,255,255,0.25);position:relative;overflow:hidden;}
+.sea-bottle .bt-body::after{content:'';position:absolute;top:6px;left:3px;width:6px;height:14px;background:rgba(255,255,245,0.5);border-radius:1px;transform:rotate(-4deg);}
+/* 瓶内微光 */
+.sea-bottle .bt-glimmer{position:absolute;top:2px;right:3px;width:6px;height:6px;background:rgba(255,255,255,0.3);border-radius:50%;}
+.sea-bottle.user .bt-body{background:linear-gradient(135deg,rgba(230,190,130,0.8),rgba(200,160,110,0.6));border-color:rgba(230,190,130,0.5);box-shadow:0 0 14px rgba(230,190,130,0.35);}
+.sea-bottle.user .bt-body::after{background:rgba(255,230,190,0.7);}
+@keyframes floatBottle{0%,100%{transform:translateY(0) rotate(-3deg)}30%{transform:translateY(-14px) rotate(0deg)}60%{transform:translateY(-6px) rotate(3deg)}}
+/* 瓶子弹出层 */
+.bottle-popup{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:80%;max-width:320px;padding:1.5rem;background:rgba(8,18,35,0.96);border:1px solid rgba(212,165,116,0.35);border-radius:16px;text-align:center;z-index:20;transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.bottle-popup.show{transform:translate(-50%,-50%) scale(1)}
+.bottle-popup .bp-msg{font-size:0.9rem;line-height:1.8;color:var(--text);margin-bottom:1rem;}
+.bottle-popup .bp-close{padding:0.4rem 1.5rem;border:1px solid var(--gold);border-radius:1.5rem;color:var(--gold);font-size:0.75rem;cursor:pointer;display:inline-block;background:transparent;}
+/* 分享按钮 */
+.sea-share{position:absolute;bottom:calc(3rem + var(--safe-bottom));left:50%;transform:translateX(-50%);z-index:10;padding:0.6rem 1.8rem;border:1px solid rgba(255,255,255,0.3);border-radius:2rem;background:rgba(0,0,0,0.45);color:#fff;font-size:0.8rem;cursor:pointer;font-family:var(--font);transition:all 0.3s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);letter-spacing:0.05em;}
+.sea-share:hover,.sea-share:active{background:rgba(212,165,116,0.3);border-color:var(--gold);color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="loading-scrn"><div class="spinner"></div><div class="lt">加载中...</div></div>
+<div id="app">
+<div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+<div class="blood-overlay" id="bloodOverlay"></div>
+
+<!-- 开场 -->
+<div class="scene active" id="scene-intro">
+  <div class="intro-bg" id="introBg"></div>
+  <div class="intro-overlay"></div>
+  <div class="intro-content">
+    <h1>穿越战火的归途</h1>
+<p class="tagline">阿里，一位在华工作的伊朗工程师<br>战争爆发后，决定返回德黑兰<br>你将以第一人称，帮助他完成这趟艰难的归家之旅</p>
+    <button class="start-btn" onclick="startStory()">开始旅程</button>
+    <div class="credit">鼠标 / 触屏 &nbsp;·&nbsp; 建议佩戴耳机</div>
+  </div>
+</div>
+
+<!-- 序幕 · 相册 -->
+<div class="scene" id="scene-album">
+  <div class="scene-title">序幕 · 上海</div>
+  <div class="album-container" id="albumContainer">
+    <img class="album-phone-img" src="H5图片素材/1-2.webp" id="albumPhoneImg" alt="" onload="fitAlbumScreen()">
+    <div class="album-screen-area" id="albumFrame">
+      <div class="album-track" id="albumTrack">
+        <div class="album-photo"><img src="H5图片素材/全家福.webp" alt="全家福"><div class="photo-caption">全家福 · 伊朗设拉子</div></div>
+        <div class="album-photo"><img src="H5图片素材/办公照.webp" alt="办公照"><div class="photo-caption">项目现场 · 上海第3年</div></div>
+                <div class="album-photo" id="warPhoto"><img src="H5图片素材/同事聚餐.webp" alt="聚餐"><div class="photo-caption" style="color:#e74c3c;">2026年3月 · 同事聚餐（战争前夜）</div></div>
+      </div>
+    </div>
+    <div class="album-hint" id="albumHint">← → 滑动相册</div>
+  </div>
+  <button class="next-arrow" id="albumNext" onclick="goTo('scene-news')">▼</button>
+</div>
+
+<!-- 新闻推送 -->
+<div class="scene" id="scene-news">
+  <div class="scene-title">新闻推送</div>
+  <div class="phone-frame">
+    <div class="phone-screen" style="background:#f2f2f7;">
+      <div class="phone-island"><div class="pi-spkr"></div><div class="pi-cam"></div></div>
+      <div class="news-container" id="newsWrap" style="padding-top:2.2rem;">
+        <div class="news-card" data-d="0"><div class="nt">23:15</div><div class="nh">快讯：美以对伊朗发动"斩首行动"，德黑兰附近传出爆炸声</div><div class="ns">来源：半岛电视台</div></div>
+        <div class="news-card" data-d="900"><div class="nt">23:17</div><div class="nh">最新：德黑兰、伊斯法罕、大不里士等多地遭空袭</div><div class="ns">来源：BBC波斯语</div></div>
+        <div class="news-card" data-d="1800"><div class="nt">23:20</div><div class="nh">突发：伊朗宣布关闭霍尔木兹海峡，国际油价暴涨</div><div class="ns">来源：路透社</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="news-glow" id="newsGlow"></div>
+  <button class="next-arrow" id="newsNext" onclick="goTo('scene-dial')">▼</button>
+</div>
+
+<!-- 拨号 -->
+<div class="scene" id="scene-dial">
+  <div class="scene-title">拨号 · 德黑兰</div>
+  <div class="phone-frame">
+    <div class="phone-screen" style="background:#2c2c2e;">
+      <div class="phone-island"><div class="pi-spkr"></div><div class="pi-cam"></div></div>
+      <div class="dial-wrap">
+        <div class="avatar-box"><div class="av">👩</div><div class="an">妈妈</div><div class="ar">德黑兰 · 伊朗</div></div>
+        <div class="dial-num">+98 21 **** 1130</div>
+        <button class="dial-btn" id="dialBtn" onclick="doDial()">📞</button>
+        <div class="dial-status" id="dialStatus">点击按钮拨号...</div>
+      </div>
+    </div>
+  </div>
+  <button class="next-arrow" id="dialNext" onclick="goTo('scene-carousel')">▼</button>
+</div>
+
+<!-- 卡片轮播 -->
+<div class="scene" id="scene-carousel">
+  <div class="scene-title">第一幕 · 回家</div>
+  <div class="phone-frame" style="height:min(78vh,530px);">
+    <div class="phone-screen" style="background:#0d0d0d;">
+      <div class="phone-island"><div class="pi-spkr"></div><div class="pi-cam"></div></div>
+      <div class="carousel-wrap" id="carouselWrap">
+        <div class="carousel-bg" id="carouselBg"></div>
+        <div class="carousel-track" id="carouselTrack">
+          <div class="carousel-card" data-i="0">
+            <img src="H5图片素材/王毅新闻截图.webp" alt="王毅外长呼吁停火">
+          </div>
+          <div class="carousel-card" data-i="1">
+            <video src="H5图片素材/平民死亡.mp4" muted loop playsinline webkit-playsinline preload="auto" id="carVideo1" ontouchstart="this.play()" onclick="this.paused?this.play():this.pause()"></video>
+            <div class="card-label">超1300名平民死亡（点击播放/暂停）</div>
+          </div>
+          <div class="carousel-card" data-i="2">
+            <video src="H5图片素材/机票.mp4" muted loop playsinline webkit-playsinline preload="auto" id="carVideo2" ontouchstart="this.play()" onclick="this.paused?this.play():this.pause()"></video>
+            <div class="card-label">机票价格暴涨10倍（点击播放/暂停）</div>
+          </div>
+        </div>
+        <div class="carousel-dots" id="carouselDots">
+          <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="next-arrow" id="carouselNext" onclick="goTo('scene-letter')">▼</button>
+</div>
+
+<!-- 发送邮件 -->
+<div class="scene" id="scene-letter">
+  <div class="scene-title">辞职信</div>
+  <div class="mail-wrap">
+    <div class="mail-form" id="mailForm">
+      <div class="mail-field"><label>收件人</label><input type="text" value="zhang-wei@company.cn" readonly></div>
+      <div class="mail-field"><label>主题</label><input type="text" value="辞职申请 - 阿里" readonly></div>
+      <div class="mail-field"><label>正文</label><textarea readonly>张经理您好：
+
+因家中突发紧急状况，我不得不辞去目前的工作返回伊朗。在上海的三年是我人生中最宝贵的经历，感谢公司和同事们的关照。
+
+阿里 · 2026年3月20日</textarea></div>
+      <div class="mail-btns">
+        <button class="mail-cancel" onclick="mailCancel()">取消</button>
+        <button class="mail-send" onclick="mailSend()">发送</button>
+      </div>
+    </div>
+    <div class="env-stage" id="envStage">
+      <div class="env-icon" id="envIcon">✉️</div>
+      <div class="env-ticket" id="envTicket">
+        <div class="tk-flight">✈️ 上海 → 伊斯坦布尔 → 德黑兰</div>
+        <div class="tk-info">2026年3月21日 · TK256 · 座位32A</div>
+        <div style="font-size:0.6rem;opacity:0.5;margin-top:0.5rem;">辞职信已发送 · 归途启程</div>
+      </div>
+    </div>
+  </div>
+  <button class="next-arrow" id="ltrNext" onclick="goTo('scene-airport')">▼</button>
+</div>
+
+<!-- 机场 -->
+<div class="scene" id="scene-airport">
+  <div class="apt-bg"></div>
+  <div class="scene-title">第二幕 · 机场</div>
+  <div class="apt-wrap">
+    <div class="apt-msg"><div class="sdr">张伟（同事）23:45</div><div class="txt">保重！看到新闻，中国正在努力斡旋。<a class="lnk" onclick="showDip()">点击查看 →</a></div></div>
+    <div class="apt-board"><div class="flt">TK256 &nbsp; 上海 → 伊斯坦布尔 &nbsp; 02:30</div></div>
+    <div class="apt-dip" id="aptDip"><div class="dt">外交部：应立即停火止战，通过对话谈判解决分歧，防止更大规模的人道主义危机。</div></div>
+  </div>
+  <button class="next-arrow show" onclick="goTo('scene-camp')">▼</button>
+</div>
+
+<!-- 边境 · 难民营 -->
+<div class="scene" id="scene-camp">
+  <div class="scene-title">边境 · 凡城</div>
+  <div class="camp-wrap">
+    <div class="camp-bg">
+      <div class="camp-scene" id="campScene">
+        <div class="camp-dot" style="left:20%;top:35%;" data-i="0"><div class="dl">🧸</div></div>
+        <div class="camp-dot" style="left:60%;top:28%;" data-i="1"><div class="dl">🏪</div></div>
+        <div class="camp-dot" style="left:40%;top:60%;" data-i="2"><div class="dl">👴</div></div>
+      </div>
+      <div class="camp-pop" id="campPop"></div>
+    </div>
+  </div>
+  <button class="next-arrow show" onclick="goTo('scene-rubble')">▼</button>
+</div>
+
+<!-- 路障 -->
+<div class="scene" id="scene-rubble">
+  <div class="scene-title">穿越边境</div>
+  <div class="rbl-wrap">
+    <div class="rbl-txt" id="rblTxt">道路被瓦砾阻挡，点击清理</div>
+    <div class="rbl-pile" id="rblPile"></div>
+    <div class="rbl-bar"><div class="rbl-fill" id="rblFill"></div></div>
+    <div class="rbl-rem" id="rblRem">剩余 12 块</div>
+    <div class="rbl-done" id="rblDone">
+      <div class="bp">🏛️</div>
+      <p>道路已清通，前方就是伊朗边境哨所。</p>
+    </div>
+  </div>
+  <button class="next-arrow" id="rblNext" onclick="goTo('scene-home')">▼</button>
+</div>
+
+<!-- 破损的家（全景拖拽） -->
+<div class="scene" id="scene-home">
+  <div class="scene-title">第三幕 · 重逢</div>
+  <div class="hm-wrap">
+    <div class="pano-wrap" id="panoWrap">
+      <div class="pano-img" id="panoImg">
+        <div class="pano-hotspot" style="left:43%;top:32%;" data-i="0">🪟</div>
+        <div class="pano-hotspot" style="left:26.5%;top:45%;" data-i="1">🧱</div>
+        <div class="pano-hotspot" style="left:80.5%;top:28%;" data-i="2">📸</div>
+        <div class="pano-hotspot" style="left:54.5%;top:73%;" data-i="3">📻</div>
+      </div>
+    </div>
+    <div class="hm-pop" id="hmPop" style="display:none"></div>
+    <div class="hm-prog" id="hmProg">← 拖拽探索 → 已探索 0 / 4</div>
+  </div>
+  <button class="next-arrow" id="hmNext" onclick="goTo('scene-dinner')">▼</button>
+</div>
+
+<!-- 晚餐 · 家人心声 -->
+<div class="scene" id="scene-dinner">
+  <div class="scene-title">晚餐</div>
+  <div class="din-wrap">
+    <div class="din-hint" id="dinHint">长按光点聆听人物心声</div>
+    <!-- 声波动画 -->
+    <div class="din-wave" id="dinWave"><span></span><span></span><span></span><span></span><span></span></div>
+    <!-- 4个角色光点：阿里/妹妹/父亲/母亲 -->
+    <div class="din-person" style="left:12%;top:32%;" data-p="3" ontouchstart="dpStart(event,3)" onmousedown="dpStart(event,3)" ontouchend="dpEnd(event,3)" onmouseup="dpEnd(event,3)" onmouseleave="dpEnd(event,3)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:35%;top:30%;" data-p="2" ontouchstart="dpStart(event,2)" onmousedown="dpStart(event,2)" ontouchend="dpEnd(event,2)" onmouseup="dpEnd(event,2)" onmouseleave="dpEnd(event,2)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:60%;top:28%;" data-p="0" ontouchstart="dpStart(event,0)" onmousedown="dpStart(event,0)" ontouchend="dpEnd(event,0)" onmouseup="dpEnd(event,0)" onmouseleave="dpEnd(event,0)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:84%;top:32%;" data-p="1" ontouchstart="dpStart(event,1)" onmousedown="dpStart(event,1)" ontouchend="dpEnd(event,1)" onmouseup="dpEnd(event,1)" onmouseleave="dpEnd(event,1)"><div class="dp-dot"></div></div>
+    <!-- 独白弹出 -->
+    <div class="din-mono" id="dinMono"></div>
+  </div>
+  <button class="next-arrow" id="dinNext" onclick="goTo('scene-airraid')">▼</button>
+</div>
+
+<!-- 空袭 -->
+<div class="scene" id="scene-airraid">
+  <div class="air-overlay" id="airOverlay"></div>
+  <div class="air-wrap">
+    <div class="air-txt" id="airTxt">⚠️ 空袭警报</div>
+    <div class="air-timer" id="airTimer">2</div>
+    <button class="air-btn" id="airBtn" onclick="dodgeOK()">卧倒！</button>
+    <div class="air-res" id="airRes">
+      <div class="ar-t">🏠 安全了...</div>
+      <div class="air-msg"><div class="sdr">张伟（同事）</div><div class="txt">阿里，保重！新闻说中国特使已抵达中东斡旋。盼和平早日到来。</div></div>
+    </div>
+  </div>
+  <button class="next-arrow" id="airNext" onclick="goTo('scene-epilogue')">▼</button>
+</div>
+
+<!-- 尾声 -->
+<div class="scene" id="scene-epilogue">
+  <div class="scene-title">尾声 · 回响</div>
+  <div class="ep-wrap">
+    <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.8rem;opacity:0.5;">截至2026年3月，这场战争已导致：</p>
+    <div class="dp-i" data-d="0"><span class="dn">1,314</span><span class="dl">名伊朗平民死亡</span></div>
+    <div class="dp-i" data-d="300"><span class="dn">9,700+</span><span class="dl">处民用设施被毁</span></div>
+    <div class="dp-i" data-d="600"><span class="dn">180</span><span class="dl">名儿童遇难</span></div>
+    <div class="dp-i" data-d="900"><span class="dn">61,000+</span><span class="dl">栋建筑受损</span></div>
+    <div class="dp-src">数据来源：基于公开报道综合整理</div>
+    <div class="peace-sec" id="peaceSec">
+      <div class="pt">如果和平有声音，你想说什么？</div>
+      <input class="pi" id="peaceInput" maxlength="20" placeholder="输入你想说的话（限20字）">
+      <div class="pcnt"><span id="peaceCnt">0</span>/20</div>
+      <button class="pb" id="peaceBtn" onclick="makePoster()">🕊️ 放入漂流瓶</button>
+    </div>
+    <a class="ext-lnk" onclick="alert('🎬 《战争与和平》动画新闻（此处为示意链接）')">观看动画《战争与和平》→</a>
+    <div class="final-cr">本故事基于真实事件改编</div>
+  </div>
+</div>
+
+<!-- 漂流瓶·海面 -->
+<div class="scene" id="scene-sea">
+  <div class="sea-glow"></div>
+  <div class="sea-stars" id="seaStars"></div>
+  <div class="sea-moon"></div>
+  <div class="sea-reflection"></div>
+  <div class="sea-waves">
+    <div class="sea-wave"></div><div class="sea-wave"></div><div class="sea-wave"></div>
+  </div>
+  <div class="sea-bottles" id="seaBottles"></div>
+  <div class="bottle-popup" id="bottlePopup">
+    <div class="bp-msg" id="bpMsg"></div>
+    <span class="bp-close" onclick="closeBottle()">收好瓶子</span>
+  </div>
+  <button class="sea-share" onclick="showPoster()">🕊️ 分享给好友</button>
+</div>
+
+<!-- 漂流瓶动画浮层 -->
+<div class="bottle-anim-overlay" id="bottleAnim">
+  <div class="bottle-anim-scene">
+    <div class="ba-letter" id="baLetter">📝</div>
+    <div class="ba-cork"></div>
+    <div class="ba-bottle" id="baBottle"></div>
+  </div>
+  <div class="ba-text">寄语已放入漂流瓶...</div>
+</div>
+
+</div><!-- /app -->
+
+<!-- 海报浮层 -->
+<div id="poster-box">
+  <img id="poster-img" src="H5图片素材/WE ARE THE WORLD.webp" alt="和平卡片">
+  <div class="pa-acts">
+    <button onclick="dlPoster()">💾 保存</button>
+    <button onclick="closePoster()">关闭</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   音效引擎
+   =================================================================== */
+const SFX = {
+  ctx:null, ok:false,
+  init(){
+    if(this.ok)return;
+    try{this.ctx=new(window.AudioContext||window.webkitAudioContext)();this.ok=true}catch(e){}
+  },
+  // 环境白噪音
+  ambient(){
+    if(!this.ctx)return;
+    const c=this.ctx,b=c.createBuffer(1,c.sampleRate*4,c.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.12;
+    const s=c.createBufferSource();s.buffer=b;s.loop=true;
+    const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=700;
+    const g=c.createGain();g.gain.value=0.1;
+    s.connect(f);f.connect(g);g.connect(c.destination);s.start();
+    this._amb=s;
+  },
+  stopAmb(){if(this._amb)try{this._amb.stop()}catch(e){}this._amb=null},
+  // 空袭警报 频率上下扫
+  siren(t){
+    if(!this.ctx)return;t=t||3;
+    const c=this.ctx;
+    const o1=c.createOscillator();o1.type='sawtooth';
+    const o2=c.createOscillator();o2.type='square';
+    const g=c.createGain();g.gain.value=0.1;
+    const lfo=c.createOscillator();lfo.type='sine';lfo.frequency.value=2.8;
+    const lg=c.createGain();lg.gain.value=500;
+    lfo.connect(lg);lg.connect(o1.frequency);lfo.start();
+    o1.connect(g);o2.connect(g);g.connect(c.destination);
+    o1.start();o2.start();
+    const dur=Math.max(t,2);
+    g.gain.setValueAtTime(0.1,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.005,c.currentTime+dur);
+    setTimeout(()=>{try{o1.stop()}catch(e){}try{o2.stop()}catch(e){}try{lfo.stop()}catch(e){}},dur*1000+100);
+  },
+  // 通知声
+  notif(){
+    if(!this.ctx)return;
+    const c=this.ctx,o=c.createOscillator();o.type='sine';o.frequency.value=880;
+    const g=c.createGain();g.gain.setValueAtTime(0.12,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.25);
+    o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{try{o.stop()}catch(e){}},300);
+  },
+  // 拨号音
+  dialTone(){
+    if(!this.ctx)return;
+    const c=this.ctx;
+    [350,440].forEach(f=>{
+      const o=c.createOscillator();o.type='sine';o.frequency.value=f;
+      const g=c.createGain();g.gain.value=0.08;o.connect(g);g.connect(c.destination);o.start();
+      setTimeout(()=>{try{o.stop()}catch(e){}},400);
+    });
+  },
+  // 忙音
+  busy(){
+    if(!this.ctx)return;
+    const c=this.ctx;
+    for(let i=0;i<3;i++){
+      const o=c.createOscillator();o.type='sine';o.frequency.value=480;
+      const g=c.createGain();const t=c.currentTime+i*0.6;
+      g.gain.setValueAtTime(0,t);g.gain.setValueAtTime(0.1,t+0.05);g.gain.setValueAtTime(0,t+0.3);
+      o.connect(g);g.connect(c.destination);o.start();
+      setTimeout(()=>{try{o.stop()}catch(e){}},i*600+400);
+    }
+  },
+  // 警报
+  alarm(){
+    if(!this.ctx)return;
+    const c=this.ctx,o=c.createOscillator();o.type='square';o.frequency.value=1000;
+    const g=c.createGain();g.gain.setValueAtTime(0.1,c.currentTime);
+    const lfo=c.createOscillator();lfo.type='square';lfo.frequency.value=5;
+    const lg=c.createGain();lg.gain.value=0.06;lfo.connect(lg);lg.connect(g.gain);lfo.start();
+    o.connect(g);g.connect(c.destination);o.start();
+    setTimeout(()=>{try{o.stop()}catch(e){}try{lfo.stop()}catch(e){}},1500);
+  },
+  // 点击
+  click(){
+    if(!this.ctx)return;
+    const c=this.ctx,o=c.createOscillator();o.type='sine';o.frequency.value=1000;
+    const g=c.createGain();g.gain.setValueAtTime(0.06,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.06);
+    o.connect(g);g.connect(c.destination);o.start();setTimeout(()=>{try{o.stop()}catch(e){}},80);
+  },
+  vibrate(p){if(navigator.vibrate)navigator.vibrate(p||100)}
+};
+
+/* ===================================================================
+   场景管理
+   =================================================================== */
+let cur = 'scene-intro';
+const order = ['scene-intro','scene-album','scene-news','scene-dial','scene-carousel','scene-letter','scene-airport','scene-camp','scene-rubble','scene-home','scene-dinner','scene-airraid','scene-epilogue','scene-sea'];
+
+function goTo(id){
+  const next=document.getElementById(id);
+  if(!next)return;
+  // 先清除所有场景，防止闪现
+  document.querySelectorAll('.scene.active').forEach(s=>s.classList.remove('active'));
+  next.classList.add('active','fade-in');
+  cur=id;
+  // 离开电话页时清除血色遮罩
+  if(id!=='scene-dial')document.getElementById('bloodOverlay').classList.remove('show');
+  // 进度
+  const idx=order.indexOf(id);
+  if(idx>=0)document.getElementById('progFill').style.width=Math.round(idx/(order.length-1)*100)+'%';
+  SFX.click();
+  // 场景初始化
+  if(id==='scene-album')initAlbum();
+  if(id==='scene-news')initNews();
+  if(id==='scene-carousel')initCarousel();
+  if(id==='scene-camp')initCamp();
+  if(id==='scene-rubble')initRubble();
+  if(id==='scene-home')initHome();
+  if(id==='scene-dinner')initDinner();
+  if(id==='scene-airraid')initAirraid();
+  if(id==='scene-epilogue')initEpi();
+  if(id==='scene-sea')initSea();
+}
+
+/* ===================================================================
+   开场
+   =================================================================== */
+function startStory(){
+  SFX.init();
+  SFX.ambient();
+  goTo('scene-album');
+}
+
+/* ===================================================================
+   相册 - 左右滑动（3张照片）
+   =================================================================== */
+let albumIdx=0,albumWarn=false;
+let albumStartX=0,albumDragX=0,albumDragging=false,albumOff=0;
+const ALBUM_THRESH=50;
+const ALBUM_TOTAL=3;
+
+function fitAlbumScreen(){
+  const img=document.getElementById('albumPhoneImg');
+  const ovl=document.getElementById('albumFrame');
+  if(!img||!ovl)return;
+  const ir=img.getBoundingClientRect(),ct=document.getElementById('albumContainer').getBoundingClientRect();
+  const rL=0.32,rT=0.34,rW=0.37,rH=0.30;
+  ovl.style.left=(ir.left-ct.left+ir.width*rL)+'px';
+  ovl.style.top=(ir.top-ct.top+ir.height*rT)+'px';
+  ovl.style.width=(ir.width*rW)+'px';
+  ovl.style.height=(ir.height*rH)+'px';
+}
+window.addEventListener('resize',function(){if(cur==='scene-album')fitAlbumScreen()});
+
+function initAlbum(){
+  albumIdx=0;albumWarn=false;albumOff=0;
+  fitAlbumScreen();
+  setTimeout(fitAlbumScreen,300);
+  updateAlbum();
+  document.getElementById('albumNext').classList.remove('show');
+}
+function updateAlbum(snap){
+  const tr=document.getElementById('albumTrack');
+  tr.style.transition=snap===false?'none':'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+  const fw=tr.parentElement.clientWidth||300;
+  tr.style.transform='translateX(-'+(albumIdx*fw)+'px)';
+  if(albumIdx===ALBUM_TOTAL-1&&!albumWarn){
+    albumWarn=true;
+    SFX.vibrate([100,50,100,50,200]);
+    SFX.alarm();
+    setTimeout(()=>document.getElementById('albumNext').classList.add('show'),600);
+  }
+}
+// 触摸拖拽（横向）
+document.getElementById('albumFrame').addEventListener('touchstart',function(e){
+  if(albumIdx===ALBUM_TOTAL-1&&albumWarn)return;
+  albumStartX=e.touches[0].clientX;albumDragging=true;
+  updateAlbum(false);
+},{passive:true});
+document.getElementById('albumFrame').addEventListener('touchmove',function(e){
+  if(!albumDragging)return;
+  albumDragX=e.touches[0].clientX;albumOff=albumDragX-albumStartX;
+  let off=albumOff;
+  if((albumIdx===0&&off>0)||(albumIdx===ALBUM_TOTAL-1&&off<0))off*=0.3;
+  const tr=document.getElementById('albumTrack'),fw=tr.parentElement.clientWidth;
+  tr.style.transform='translateX('+(-albumIdx*fw+off)+'px)';
+},{passive:true});
+document.getElementById('albumFrame').addEventListener('touchend',function(){
+  if(!albumDragging)return;albumDragging=false;
+  if(Math.abs(albumOff)>ALBUM_THRESH){
+    if(albumOff<0&&albumIdx<ALBUM_TOTAL-1){albumIdx++;updateAlbum();SFX.click()}
+    else if(albumOff>0&&albumIdx>0){albumIdx--;updateAlbum();SFX.click()}
+    else updateAlbum();
+  }else updateAlbum();
+  albumOff=0;
+},{passive:true});
+// 鼠标拖拽（桌面）
+document.getElementById('albumFrame').addEventListener('mousedown',function(e){
+  if(albumIdx===ALBUM_TOTAL-1&&albumWarn)return;
+  albumStartX=e.clientX;albumDragging=true;
+  updateAlbum(false);e.preventDefault();
+});
+document.addEventListener('mousemove',function(e){
+  if(!albumDragging||cur!=='scene-album')return;
+  albumDragX=e.clientX;albumOff=albumDragX-albumStartX;
+  let off=albumOff;
+  if((albumIdx===0&&off>0)||(albumIdx===ALBUM_TOTAL-1&&off<0))off*=0.3;
+  const tr=document.getElementById('albumTrack'),fw=tr.parentElement.clientWidth;
+  tr.style.transform='translateX('+(-albumIdx*fw+off)+'px)';
+});
+document.addEventListener('mouseup',function(){
+  if(!albumDragging||cur!=='scene-album')return;albumDragging=false;
+  if(Math.abs(albumOff)>ALBUM_THRESH){
+    if(albumOff<0&&albumIdx<ALBUM_TOTAL-1){albumIdx++;updateAlbum();SFX.click()}
+    else if(albumOff>0&&albumIdx>0){albumIdx--;updateAlbum();SFX.click()}
+    else updateAlbum();
+  }else updateAlbum();
+  albumOff=0;
+});
+
+/* ===================================================================
+   新闻推送
+   =================================================================== */
+function initNews(){
+  const cards=document.querySelectorAll('.news-card');
+  cards.forEach(c=>{
+    const d=parseInt(c.dataset.d);
+    setTimeout(()=>{
+      c.classList.add('show');SFX.notif();SFX.vibrate(80);
+      if(c===cards[cards.length-1]){
+        document.getElementById('newsGlow').classList.add('active');
+        setTimeout(()=>document.getElementById('newsNext').classList.add('show'),1000);
+      }
+    },d);
+  });
+}
+
+/* ===================================================================
+   拨号
+   =================================================================== */
+let dialC=0;
+function doDial(){
+  SFX.dialTone();
+  const st=document.getElementById('dialStatus'),btn=document.getElementById('dialBtn');
+  dialC++;
+  if(dialC===1){
+    st.textContent='呼叫中...';st.className='dial-status';
+    setTimeout(()=>{st.textContent='对方暂时无法接通';st.className='dial-status err'},1800);
+  }else if(dialC===2){
+    st.textContent='重新呼叫...';st.className='dial-status';
+    SFX.busy();
+    setTimeout(()=>{st.textContent='您拨打的用户不在服务区';st.className='dial-status err'},1800);
+  }else{
+    st.textContent='📵 无法接通...';st.className='dial-status err';
+    btn.classList.add('done');
+    document.getElementById('bloodOverlay').classList.add('show');
+    SFX.vibrate([200,100,200]);
+    setTimeout(()=>document.getElementById('dialNext').classList.add('show'),2500);
+  }
+}
+
+/* ===================================================================
+   卡片轮播（视差滑动）
+   =================================================================== */
+let carIdx=0,carStartX=0,carDragging=false,carOff=0;
+const carThreshold=60,carTotal=3;
+let carViewed=0; // 0=bitmask of viewed cards
+
+function initCarousel(){
+  carIdx=0;carViewed=1; // 第一张默认已看
+  document.getElementById('carouselTrack').style.transform='translateX(0)';
+  document.getElementById('carouselBg').style.transform='translateX(0)';
+  updateCarDots();
+  document.getElementById('carouselNext').classList.remove('show');
+  // 暂停所有视频
+  document.querySelectorAll('#scene-carousel video').forEach(v=>{v.pause();v.currentTime=0;});
+}
+function updateCarDots(){
+  document.querySelectorAll('#carouselDots .dot').forEach((d,i)=>{
+    d.classList.toggle('active',i===carIdx);
+  });
+}
+function updateCarTrack(animate){
+  const tr=document.getElementById('carouselTrack'),w=tr.parentElement.clientWidth;
+  tr.style.transition=animate===false?'none':'transform 0.35s cubic-bezier(0.22,1,0.36,1)';
+  tr.style.transform='translateX('+(-carIdx*w)+'px)';
+  // 视差背景 0.3倍速
+  document.getElementById('carouselBg').style.transform='translateX('+(-carIdx*w*0.3)+'px)';
+  // 视频控制（自动静音播放+点击手动播放回退）
+  document.querySelectorAll('#scene-carousel video').forEach((v,i)=>{
+    if(i===carIdx){v.currentTime=0;v.muted=true;v.play().catch(()=>{v.poster=''});}
+    else v.pause();
+  });
+  updateCarDots();
+}
+// 触摸拖拽
+document.getElementById('carouselWrap').addEventListener('touchstart',function(e){
+  carStartX=e.touches[0].clientX;carDragging=true;
+  carOff=0;updateCarTrack(false);
+},{passive:true});
+document.getElementById('carouselWrap').addEventListener('touchmove',function(e){
+  if(!carDragging)return;
+  carOff=e.touches[0].clientX-carStartX;
+  if((carIdx===0&&carOff>0)||(carIdx===carTotal-1&&carOff<0))carOff*=0.3;
+  const tr=document.getElementById('carouselTrack'),w=tr.parentElement.clientWidth;
+  tr.style.transform='translateX('+(-carIdx*w+carOff)+'px)';
+  document.getElementById('carouselBg').style.transform='translateX('+(-carIdx*w*0.3+carOff*0.3)+'px)';
+},{passive:true});
+document.getElementById('carouselWrap').addEventListener('touchend',function(){
+  if(!carDragging)return;carDragging=false;
+  if(Math.abs(carOff)>carThreshold){
+    if(carOff<0&&carIdx<carTotal-1){carIdx++}
+    else if(carOff>0&&carIdx>0){carIdx--}
+  }
+  carViewed|=(1<<carIdx);
+  updateCarTrack(true);
+  if(carViewed===7)document.getElementById('carouselNext').classList.add('show');
+  carOff=0;
+},{passive:true});
+// 鼠标拖拽（桌面）
+document.getElementById('carouselWrap').addEventListener('mousedown',function(e){
+  carStartX=e.clientX;carDragging=true;carOff=0;
+  updateCarTrack(false);e.preventDefault();
+});
+document.addEventListener('mousemove',function(e){
+  if(!carDragging||cur!=='scene-carousel')return;
+  carOff=e.clientX-carStartX;
+  if((carIdx===0&&carOff>0)||(carIdx===carTotal-1&&carOff<0))carOff*=0.3;
+  const tr=document.getElementById('carouselTrack'),w=tr.parentElement.clientWidth;
+  tr.style.transform='translateX('+(-carIdx*w+carOff)+'px)';
+  document.getElementById('carouselBg').style.transform='translateX('+(-carIdx*w*0.3+carOff*0.3)+'px)';
+});
+document.addEventListener('mouseup',function(){
+  if(!carDragging||cur!=='scene-carousel')return;carDragging=false;
+  if(Math.abs(carOff)>carThreshold){
+    if(carOff<0&&carIdx<carTotal-1){carIdx++}
+    else if(carOff>0&&carIdx>0){carIdx--}
+  }
+  carViewed|=(1<<carIdx);
+  updateCarTrack(true);
+  if(carViewed===7)document.getElementById('carouselNext').classList.add('show');
+  carOff=0;
+});
+
+/* ===================================================================
+   辞职
+   =================================================================== */
+function mailSend(){
+  SFX.click();
+  // 隐藏表单
+  document.getElementById('mailForm').style.display='none';
+  const stage=document.getElementById('envStage'),icon=document.getElementById('envIcon');
+  stage.classList.add('active');
+  // 信封关闭动画
+  setTimeout(()=>{icon.classList.add('closing');},100);
+  // 关闭完成后显示机票
+  setTimeout(()=>{
+    icon.style.display='none';
+    document.getElementById('envTicket').classList.add('show');
+    document.getElementById('ltrNext').classList.add('show');
+    SFX.click();
+  },750);
+}
+function mailCancel(){
+  SFX.click();
+  document.getElementById('ltrNext').classList.add('show');
+  document.getElementById('mailForm').style.opacity='0.4';
+  setTimeout(()=>{alert('邮件已保存为草稿。但窗外，回家心切……阿里最终点击了发送。');mailSend();},1200);
+}
+
+/* ===================================================================
+   机场
+   =================================================================== */
+function showDip(){document.getElementById('aptDip').classList.add('show');SFX.click()}
+
+/* ===================================================================
+   边境热点
+   =================================================================== */
+const CP=[
+  {t:'穆罕默德，7岁',b:'来自伊斯法罕，与姐姐在混乱中走散。他手中紧握着一个破旧的玩具车，那是父亲去年送的生日礼物。'},
+  {t:'废弃的巴扎',b:'这里曾是中东最大的边境市场，日流水百万美元。如今只剩下空荡的摊位和散落的货物，以及墙上未干的弹孔。'},
+  {t:'侯赛因爷爷',b:'71岁，儿子在空袭中失踪，他带着两个孙子徒步三天到达边境。"不知道明天会怎样，但孩子们得活着。"'}
+];
+let cpActive=-1;
+function initCamp(){
+  document.querySelectorAll('.camp-dot').forEach(d=>{
+    d.addEventListener('mouseenter',function(){showCP(parseInt(this.dataset.i))});
+    d.addEventListener('touchstart',function(e){e.preventDefault();showCP(parseInt(this.dataset.i))});
+  });
+  // 进入场景时重置热点状态
+  cpActive = -1;
+  document.getElementById('campPop').style.display = 'none';
+}
+function showCP(i){
+  if(i===cpActive)return;cpActive=i;SFX.click();
+  const p=document.getElementById('campPop');p.style.display='block';
+  p.innerHTML=`<div class="cp-t">${CP[i].t}</div><div class="cp-d">${CP[i].b}</div>`;
+  document.querySelectorAll('.camp-dot').forEach(h=>h.classList.remove('active'));
+  document.querySelectorAll('.camp-dot')[i].classList.add('active');
+}
+
+/* ===================================================================
+   路障
+   =================================================================== */
+let rblN=12;
+function initRubble(){
+  rblN=12;
+  const p=document.getElementById('rblPile');p.innerHTML='';
+  for(let i=0;i<12;i++){
+    const e=document.createElement('div');e.className='rbl-p';
+    e.style.left=(8+Math.random()*78)+'%';e.style.top=(8+Math.random()*75)+'%';
+    e.style.setProperty('--r',Math.random()*360+'deg');e.dataset.i=i;
+    e.addEventListener('click',function(){clrRbl(this)});
+    p.appendChild(e);
+  }
+  document.getElementById('rblFill').style.width='0%';
+  document.getElementById('rblRem').textContent='剩余 12 块';
+  document.getElementById('rblDone').style.display='none';
+  document.getElementById('rblNext').classList.remove('show');
+  document.getElementById('rblTxt').textContent='道路被瓦砾阻挡，点击清理';
+}
+function clrRbl(el){
+  if(el.classList.contains('clr'))return;
+  el.classList.add('clr');SFX.click();SFX.vibrate(30);
+  rblN--;const done=12-rblN;const pct=Math.round(done/12*100);
+  document.getElementById('rblFill').style.width=pct+'%';
+  document.getElementById('rblRem').textContent='剩余 '+rblN+' 块';
+  if(rblN<=0){
+    document.getElementById('rblTxt').textContent='✓ 道路已清通！';
+    document.getElementById('rblDone').style.display='block';
+    document.getElementById('rblNext').classList.add('show');
+  }
+}
+
+/* ===================================================================
+   破损的家（全景拖拽）
+   =================================================================== */
+const HD=[
+  '这是妹妹最喜欢的窗户，以前能从这里看到花园里的玫瑰。现在只剩下破碎的玻璃和呼啸的风声。',
+  '爸爸说爆炸时整面墙都在摇晃。墙上的裂缝像一道伤疤，提醒着那个可怕的夜晚。',
+  '婚纱照上蒙了厚厚的灰尘。婚礼取消了，但她在电话里说："人活着就好，其他的都不重要。"',
+  '收音机里播放着BBC波斯语战况报道："战事已进入第12天，国际社会呼吁立即停火……"'
+];
+let hmN=0, panoX=0, panoStartX=0, panoDragging=false, panoOff=0;
+
+function initHome(){
+  hmN=0; panoX=0; panoOff=0;
+  document.getElementById('panoImg').style.transform='translateX(0)';
+  document.getElementById('hmProg').textContent='← 拖拽探索 → 已探索 0 / 4';
+  document.getElementById('hmPop').style.display='none';
+  document.getElementById('hmNext').classList.remove('show');
+  document.querySelectorAll('.pano-hotspot').forEach(e=>e.classList.remove('found'));
+  // 动态计算全景图宽度
+  const wrap=document.getElementById('panoWrap'),pano=document.getElementById('panoImg');
+  const img=new Image();img.onload=function(){
+    const ratio=this.naturalWidth/this.naturalHeight;
+    pano.style.width=(wrap.clientHeight*ratio)+'px';
+  };
+  img.src='H5图片素材/破碎家中内景.webp';
+}
+function clampPano(v){
+  const wrap=document.getElementById('panoWrap'),pano=document.getElementById('panoImg');
+  const maxW=wrap.clientWidth-pano.clientWidth;
+  return Math.max(maxW,Math.min(0,v));
+}
+
+// 全景拖拽（无回弹，松手即定格）
+const pw=document.getElementById('panoWrap');
+pw.addEventListener('touchstart',function(e){
+  panoStartX=e.touches[0].clientX; panoDragging=true;
+  document.getElementById('panoImg').style.transition='none';
+},{passive:true});
+pw.addEventListener('touchmove',function(e){
+  if(!panoDragging)return;
+  panoOff=e.touches[0].clientX-panoStartX;
+  movePano(clampPano(panoX+panoOff));
+},{passive:true});
+pw.addEventListener('touchend',function(){
+  if(!panoDragging)return; panoDragging=false;
+  panoX=clampPano(panoX+panoOff); panoOff=0;
+  movePano(panoX);
+},{passive:true});
+pw.addEventListener('mousedown',function(e){
+  panoStartX=e.clientX; panoDragging=true;
+  document.getElementById('panoImg').style.transition='none';
+  e.preventDefault();
+});
+document.addEventListener('mousemove',function(e){
+  if(!panoDragging||cur!=='scene-home')return;
+  panoOff=e.clientX-panoStartX;
+  movePano(clampPano(panoX+panoOff));
+});
+document.addEventListener('mouseup',function(){
+  if(!panoDragging||cur!=='scene-home')return; panoDragging=false;
+  panoX=clampPano(panoX+panoOff); panoOff=0;
+  movePano(panoX);
+});
+
+function movePano(v){
+  document.getElementById('panoImg').style.transform='translateX('+v+'px)';
+}
+
+// 热点点击
+document.addEventListener('click',function(e){
+  const it=e.target.closest('.pano-hotspot');
+  if(!it||cur!=='scene-home'||panoOff!==0&&Math.abs(panoOff)>5)return;
+  if(it.classList.contains('found'))return;
+  const i=parseInt(it.dataset.i); it.classList.add('found'); hmN++;
+  document.getElementById('hmProg').textContent='← 左右拖拽探索 → 已探索 '+hmN+' / 4';
+  const pop=document.getElementById('hmPop'); pop.style.display='block';
+  pop.innerHTML='<div class="hp-t">'+HD[i]+'</div><div class="hp-x" onclick="this.parentElement.style.display=\'none\'">✕ 关闭</div>';
+  SFX.vibrate(80); SFX.click();
+  if(hmN>=4)setTimeout(()=>document.getElementById('hmNext').classList.add('show'),500);
+});
+
+/* ===================================================================
+   晚餐 - 四人长按独白（1秒 + 声波）
+   =================================================================== */
+const DVOICES=[
+  {speaker:'父亲',text:'家还在、人还在，可往日的安宁没了，只希望战火快点停下，让日子回归平常。'},
+  {speaker:'母亲',text:'你能平安回来就够了，我不求别的，只盼一家人再也不用躲在地下室担惊受怕。'},
+  {speaker:'妹妹',text:'婚礼取消了、窗户碎了，只要家人都活着就有希望，可我再也不想听到空袭警报。'},
+  {speaker:'阿里',text:'我穿越6000公里归家，以为能让一切回到从前，可有些东西像破碎的窗户，再也拼不回原样。'}
+];
+let dpTimer=null,dpOn=null,dpSeen=0;
+
+function initDinner(){
+  dpSeen=0;
+  document.getElementById('dinMono').style.display='none';
+  document.getElementById('dinWave').classList.remove('active');
+  document.getElementById('dinNext').classList.remove('show');
+}
+function dpStart(e,p){
+  if(cur!=='scene-dinner')return;
+  dpOn=p;
+  let t=0;
+  clearInterval(dpTimer);
+  dpTimer=setInterval(()=>{
+    t+=0.1;
+    if(t>=1){clearInterval(dpTimer);showVoice(p)} // 1秒触发
+  },100);
+}
+function dpEnd(e,p){
+  clearInterval(dpTimer);dpTimer=null;dpOn=null;
+}
+function showVoice(p){
+  SFX.click();
+  const m=document.getElementById('dinMono'),w=document.getElementById('dinWave');
+  m.style.display='block';
+  m.innerHTML='<div class="dm-speaker">'+DVOICES[p].speaker+'的心声</div><div class="dm-text">'+DVOICES[p].text+'</div>';
+  w.classList.add('active');
+  setTimeout(()=>w.classList.remove('active'),3000);
+  dpSeen|=(1<<p);
+  if(dpSeen===15)document.getElementById('dinNext').classList.add('show');
+}
+
+/* ===================================================================
+   空袭
+   =================================================================== */
+let airT=null,airOK=false;
+function initAirraid(){
+  airOK=false;
+  document.getElementById('airTxt').textContent='⚠️ 空袭警报';
+  document.getElementById('airTimer').textContent='2';document.getElementById('airTimer').style.display='block';
+  document.getElementById('airBtn').classList.remove('hide');
+  document.getElementById('airRes').style.display='none';
+  document.getElementById('airOverlay').style.display='block';
+  document.getElementById('airNext').classList.remove('show');
+  SFX.siren(3);
+  let c=2;
+  airT=setInterval(()=>{c--;document.getElementById('airTimer').textContent=c;if(c<=0){clearInterval(airT);if(!airOK)dodgeFail()}},1000);
+}
+function dodgeOK(){
+  if(airOK)return;airOK=true;clearInterval(airT);
+  SFX.click();
+  document.getElementById('airBtn').classList.add('hide');
+  document.getElementById('airTimer').style.display='none';
+  document.getElementById('airTxt').textContent='✓ 安全了...';
+  document.getElementById('airRes').style.display='block';
+  document.getElementById('airOverlay').style.display='none';
+  setTimeout(()=>document.getElementById('airNext').classList.add('show'),2000);
+}
+function dodgeFail(){
+  SFX.vibrate(400);
+  document.getElementById('airTxt').textContent='💥 ...';
+  document.getElementById('airBtn').classList.add('hide');
+  setTimeout(()=>{document.getElementById('airRes').style.display='block';setTimeout(()=>document.getElementById('airNext').classList.add('show'),2000)},1000);
+}
+
+/* ===================================================================
+   尾声
+   =================================================================== */
+function initEpi(){
+  document.querySelectorAll('.dp-i').forEach((el,i)=>{
+    setTimeout(()=>el.classList.add('show'),parseInt(el.dataset.d)||i*300);
+  });
+  setTimeout(()=>document.getElementById('peaceSec').classList.add('show'),2200);
+  document.getElementById('peaceInput').addEventListener('input',function(){
+    document.getElementById('peaceCnt').textContent=this.value.length;
+  });
+}
+
+/* ===================================================================
+   和平卡片
+   =================================================================== */
+let peaceMsg='';
+function makePoster(){
+  const txt=document.getElementById('peaceInput').value.trim();
+  if(!txt){alert('请输入你想说的话');return}
+  peaceMsg=txt;
+  // 信件塞入漂流瓶动画
+  const ovl=document.getElementById('bottleAnim'),letter=document.getElementById('baLetter'),bottle=document.getElementById('baBottle');
+  ovl.classList.add('active');
+  setTimeout(()=>{letter.classList.add('slide-in');SFX.click();},200);
+  setTimeout(()=>{bottle.classList.add('glow');},700);
+  setTimeout(()=>{ovl.classList.remove('active');letter.classList.remove('slide-in');bottle.classList.remove('glow');goTo('scene-sea');},1600);
+}
+function showPoster(){
+  if(!peaceMsg){alert('请先在上一页输入和平寄语');return}
+  document.getElementById('poster-box').classList.add('active');
+}
+function dlPoster(){
+  const a=document.createElement('a');a.download='和平卡片.webp';
+  a.href='H5图片素材/WE ARE THE WORLD.webp';a.click();
+}
+function closePoster(){document.getElementById('poster-box').classList.remove('active')}
+
+/* ===================================================================
+   漂流瓶·海面
+   =================================================================== */
+const seaMsgs=[
+  '愿世界再无炮火，愿孩子都能在阳光下奔跑。',
+  '和平不是梦想，是每个人都该拥有的日常。',
+  '炮弹落下时，碎裂的不只是建筑，还有无数个家庭的未来。',
+  '6000公里的归途，每一步都在问：战争何时结束？',
+  '愿每一个母亲都不再躲进地下室，愿每一扇窗户都能映出花园。',
+  '枪声停了，可失去的永远回不来。我们只能祈求，不要再有下一次。',
+  '如果和平有声音，那一定是孩子笑声、鸟鸣和风吹过花园的沙沙声。'
+];
+function initSea(){
+  // 生成星空
+  const stars=document.getElementById('seaStars');stars.innerHTML='';
+  for(let i=0;i<40;i++){
+    const s=document.createElement('div');s.className='sea-star';
+    s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';
+    s.style.animationDelay=Math.random()*3+'s';s.style.animationDuration=(2+Math.random()*4)+'s';
+    stars.appendChild(s);
+  }
+  // 生成瓶子
+  const cont=document.getElementById('seaBottles');cont.innerHTML='';
+  const bottlePositions=[
+    {l:'15%',t:'45%',d:0},{l:'35%',t:'55%',d:1.5},{l:'55%',t:'40%',d:0.8},{l:'72%',t:'52%',d:2.2},
+    {l:'25%',t:'62%',d:1},{l:'65%',t:'60%',d:3},{l:'82%',t:'44%',d:1.8},{l:'45%',t:'68%',d:2.5}
+  ];
+  bottlePositions.forEach((bp,i)=>{
+    const b=document.createElement('div');b.className='sea-bottle';
+    b.style.left=bp.l;b.style.top=bp.t;b.style.animationDelay=bp.d+'s';
+    b.innerHTML='<div class="bt-cork"></div><div class="bt-body"><div class="bt-glimmer"></div></div>';
+    b.addEventListener('click',function(e){e.stopPropagation();openBottle(i)});
+    b.addEventListener('touchstart',function(e){e.stopPropagation();e.preventDefault();openBottle(i)});
+    cont.appendChild(b);
+  });
+  // 用户瓶子
+  if(peaceMsg){
+    const ub=document.createElement('div');ub.className='sea-bottle user';
+    ub.style.left='50%';ub.style.top='48%';ub.style.animationDelay='1.2s';
+    ub.innerHTML='<div class="bt-cork"></div><div class="bt-body"><div class="bt-glimmer"></div></div>';
+    ub.addEventListener('click',function(e){e.stopPropagation();openUserBottle()});
+    ub.addEventListener('touchstart',function(e){e.stopPropagation();e.preventDefault();openUserBottle()});
+    cont.appendChild(ub);
+  }
+}
+function openBottle(i){
+  const msg=seaMsgs[i%seaMsgs.length];
+  document.getElementById('bpMsg').textContent=msg;
+  document.getElementById('bottlePopup').classList.add('show');SFX.click();
+}
+function openUserBottle(){
+  document.getElementById('bpMsg').textContent=peaceMsg||'愿和平永驻人间。';
+  document.getElementById('bottlePopup').classList.add('show');SFX.click();
+}
+function closeBottle(){
+  document.getElementById('bottlePopup').classList.remove('show');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.sea-bottle')&&!e.target.closest('.bottle-popup')&&!e.target.closest('.bp-close'))
+    document.getElementById('bottlePopup').classList.remove('show');
+});
+
+/* ===================================================================
+   设备自适应（手机尺寸 414px）
+   =================================================================== */
+(function(){
+  const adjustSize=()=>{
+    document.documentElement.style.setProperty('--vh',window.innerHeight*0.01+'px');
+  };
+  adjustSize();
+  window.addEventListener('resize',adjustSize);
+})();
+
+/* ===================================================================
+   视差滚动效果
+   =================================================================== */
+(function(){
+  // 开场场景背景视差
+  document.addEventListener('mousemove',function(e){
+    if(cur!=='scene-intro')return;
+    const bg=document.getElementById('introBg');
+    if(!bg)return;
+    const x=(e.clientX/window.innerWidth-0.5)*20;
+    const y=(e.clientY/window.innerHeight-0.5)*20;
+    bg.style.transform='translate('+x+'px,'+y+'px)';
+  });
+  document.addEventListener('touchmove',function(e){
+    if(cur!=='scene-intro')return;
+    const bg=document.getElementById('introBg');
+    if(!bg||!e.touches[0])return;
+    const x=(e.touches[0].clientX/window.innerWidth-0.5)*20;
+    const y=(e.touches[0].clientY/window.innerHeight-0.5)*20;
+    bg.style.transform='translate('+x+'px,'+y+'px)';
+  },{passive:true});
+  // 场景切换时，新场景从不同方向滑入
+  window.addEventListener('load',function(){
+    const s=document.styleSheets[0];
+    try{
+      const sceneOrders={
+        'scene-album':'fromRight','scene-news':'fromBottom','scene-dial':'fromLeft',
+        'scene-carousel':'fromTop','scene-letter':'fromRight','scene-airport':'fromBottom',
+        'scene-camp':'fromLeft','scene-rubble':'fromTop','scene-home':'fromRight',
+        'scene-dinner':'fromLeft','scene-airraid':'fromBottom','scene-epilogue':'fromTop','scene-sea':'fromBottom'
+      };
+      // 通过CSS变量控制入场方向已足够
+    }catch(e){}
+  });
+})();
+
+/* ===================================================================
+   键盘
+   =================================================================== */
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key===' '){
+    const s=document.querySelector('.scene.active');
+    if(s){const n=s.querySelector('.next-arrow.show');if(n)n.click()}
+  }
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft'){const i=order.indexOf(cur);if(i>0)goTo(order[i-1])}
+});
+
+/* ===================================================================
+   全局点击与卸载
+   =================================================================== */
+document.addEventListener('click',function(){SFX.init()},{once:true});
+window.addEventListener('load',function(){setTimeout(()=>document.getElementById('loading-scrn').style.display='none',400);SFX.init()});
+</script>
+</body>
+</html>
