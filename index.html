@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -71,11 +72,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 }
 #scene-intro .intro-content{position:relative;z-index:5;}
 #scene-intro h1{
-  font-size:clamp(1.3rem,4vw,2.2rem);font-weight:700;letter-spacing:0.1em;
+  font-size:clamp(1.8rem,6vw,2.8rem);font-weight:700;letter-spacing:0.1em;
   background:linear-gradient(135deg,var(--gold),#f0e6d3);-webkit-background-clip:text;
   -webkit-text-fill-color:transparent;margin-bottom:1.5rem;white-space:nowrap;
 }
-#scene-intro .tagline{font-size:clamp(0.75rem,2vw,0.95rem);color:var(--text-muted);line-height:2;max-width:28rem;margin:0 auto 2rem;opacity:0.7;}
+#scene-intro .tagline{font-size:clamp(0.9rem,3vw,1.15rem);color:#fff;line-height:2;max-width:28rem;margin:0 auto 2rem;opacity:0.85;}
 .start-btn{
   padding:0.9rem 2.8rem;border:1px solid var(--gold);border-radius:3rem;
   background:transparent;color:var(--gold);font-size:1rem;letter-spacing:0.2em;
@@ -346,6 +347,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 .din-person{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:5;user-select:none;-webkit-user-select:none;}
 .dp-dot{width:1.2rem;height:1.2rem;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold),0 0 18px rgba(212,165,116,0.6);animation:dpPulse 2s infinite;}
 @keyframes dpPulse{0%,100%{box-shadow:0 0 6px var(--gold),0 0 12px rgba(212,165,116,0.4)}50%{box-shadow:0 0 12px var(--gold),0 0 28px rgba(212,165,116,0.8)}}
+/* 大光点 */
+.din-person-big{left:50% !important;top:30% !important;}
+.dp-dot-big{width:3.2rem;height:3.2rem;box-shadow:0 0 16px var(--gold),0 0 36px rgba(212,165,116,0.7);animation:dpPulseBig 2s infinite;}
+@keyframes dpPulseBig{0%,100%{box-shadow:0 0 12px var(--gold),0 0 24px rgba(212,165,116,0.5)}50%{box-shadow:0 0 22px var(--gold),0 0 48px rgba(212,165,116,0.9)}}
 /* 独白 */
 .din-mono{
   display:none;position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);
@@ -503,6 +508,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 /* 分享按钮 */
 .sea-share{position:absolute;bottom:calc(3rem + var(--safe-bottom));left:50%;transform:translateX(-50%);z-index:10;padding:0.6rem 1.8rem;border:1px solid rgba(255,255,255,0.3);border-radius:2rem;background:rgba(0,0,0,0.45);color:#fff;font-size:0.8rem;cursor:pointer;font-family:var(--font);transition:all 0.3s;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);letter-spacing:0.05em;}
 .sea-share:hover,.sea-share:active{background:rgba(212,165,116,0.3);border-color:var(--gold);color:var(--gold)}
+
+/* ========== 全屏视频场景 ========== */
+.video-full-scene{background:#000;padding:0;}
+.video-full-scene video{width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;}
+
+/* ========== 黑幕打字机 ========== */
+.typewriter-scene{background:#000;padding:2rem;}
+.tw-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;}
+.tw-text{font-size:1.3rem;color:var(--gold);letter-spacing:0.12em;text-align:center;line-height:2;min-height:3rem;font-family:var(--font);}
+.tw-cursor{display:inline-block;width:2px;height:1.2em;background:var(--gold);margin-left:2px;vertical-align:text-bottom;animation:twBlink 0.5s step-end infinite;}
+@keyframes twBlink{0%,100%{opacity:1}50%{opacity:0}}
 </style>
 </head>
 <body>
@@ -517,44 +533,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
   <div class="intro-overlay"></div>
   <div class="intro-content">
     <h1>穿越战火的归途</h1>
-<p class="tagline">阿里，一位在华工作的伊朗工程师<br>战争爆发后，决定返回德黑兰<br>你将以第一人称，帮助他完成这趟艰难的归家之旅</p>
+<p class="tagline">阿里，一位在华工作的伊朗工程师<br>战争爆发后，决定返回德黑兰<br>你将以第一人称<br>帮助他完成这趟艰难的归家之旅</p>
     <button class="start-btn" onclick="startStory()">开始旅程</button>
     <div class="credit">鼠标 / 触屏 &nbsp;·&nbsp; 建议佩戴耳机</div>
   </div>
 </div>
 
-<!-- 序幕 · 相册 -->
-<div class="scene" id="scene-album">
-  <div class="scene-title">序幕 · 上海</div>
-  <div class="album-container" id="albumContainer">
-    <img class="album-phone-img" src="H5图片素材/1-2.webp" id="albumPhoneImg" alt="" onload="fitAlbumScreen()">
-    <div class="album-screen-area" id="albumFrame">
-      <div class="album-track" id="albumTrack">
-        <div class="album-photo"><img src="H5图片素材/全家福.webp" alt="全家福"><div class="photo-caption">全家福 · 伊朗设拉子</div></div>
-        <div class="album-photo"><img src="H5图片素材/办公照.webp" alt="办公照"><div class="photo-caption">项目现场 · 上海第3年</div></div>
-                <div class="album-photo" id="warPhoto"><img src="H5图片素材/同事聚餐.webp" alt="聚餐"><div class="photo-caption" style="color:#e74c3c;">2026年3月 · 同事聚餐（战争前夜）</div></div>
-      </div>
-    </div>
-    <div class="album-hint" id="albumHint">← → 滑动相册</div>
-  </div>
-  <button class="next-arrow" id="albumNext" onclick="goTo('scene-news')">▼</button>
+<!-- 序幕 · 翻阅相册视频 -->
+<div class="scene video-full-scene" id="scene-album">
+  <video src="H5图片素材/翻阅相册.mp4" id="albumVideo" playsinline webkit-playsinline preload="metadata"></video>
 </div>
 
-<!-- 新闻推送 -->
-<div class="scene" id="scene-news">
-  <div class="scene-title">新闻推送</div>
-  <div class="phone-frame">
-    <div class="phone-screen" style="background:#f2f2f7;">
-      <div class="phone-island"><div class="pi-spkr"></div><div class="pi-cam"></div></div>
-      <div class="news-container" id="newsWrap" style="padding-top:2.2rem;">
-        <div class="news-card" data-d="0"><div class="nt">23:15</div><div class="nh">快讯：美以对伊朗发动"斩首行动"，德黑兰附近传出爆炸声</div><div class="ns">来源：半岛电视台</div></div>
-        <div class="news-card" data-d="900"><div class="nt">23:17</div><div class="nh">最新：德黑兰、伊斯法罕、大不里士等多地遭空袭</div><div class="ns">来源：BBC波斯语</div></div>
-        <div class="news-card" data-d="1800"><div class="nt">23:20</div><div class="nh">突发：伊朗宣布关闭霍尔木兹海峡，国际油价暴涨</div><div class="ns">来源：路透社</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="news-glow" id="newsGlow"></div>
-  <button class="next-arrow" id="newsNext" onclick="goTo('scene-dial')">▼</button>
+<!-- 黑幕打字机1 · 相册后 -->
+<div class="scene typewriter-scene" id="scene-tw1">
+  <div class="tw-stage"><div class="tw-text" id="tw1Text"><span class="tw-cursor"></span></div></div>
 </div>
 
 <!-- 拨号 -->
@@ -601,7 +593,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       </div>
     </div>
   </div>
-  <button class="next-arrow" id="carouselNext" onclick="goTo('scene-letter')">▼</button>
+  <button class="next-arrow" id="carouselNext" onclick="goTo('scene-tw2')">▼</button>
+</div>
+
+<!-- 黑幕打字机2 · 轮播后 -->
+<div class="scene typewriter-scene" id="scene-tw2">
+  <div class="tw-stage"><div class="tw-text" id="tw2Text"><span class="tw-cursor"></span></div></div>
+</div>
+
+<!-- 想象视频 -->
+<div class="scene video-full-scene" id="scene-imagine">
+  <video src="H5图片素材/想象.mp4" id="imagineVideo" playsinline webkit-playsinline preload="metadata"></video>
 </div>
 
 <!-- 发送邮件 -->
@@ -665,7 +667,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 <div class="scene" id="scene-rubble">
   <div class="scene-title">穿越边境</div>
   <div class="rbl-wrap">
-    <div class="rbl-txt" id="rblTxt">道路被瓦砾阻挡，点击清理</div>
+    <div class="rbl-txt" id="rblTxt">道路被瓦砾阻挡，手指滑动清扫</div>
     <div class="rbl-pile" id="rblPile"></div>
     <div class="rbl-bar"><div class="rbl-fill" id="rblFill"></div></div>
     <div class="rbl-rem" id="rblRem">剩余 12 块</div>
@@ -702,11 +704,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
     <div class="din-hint" id="dinHint">长按光点聆听人物心声</div>
     <!-- 声波动画 -->
     <div class="din-wave" id="dinWave"><span></span><span></span><span></span><span></span><span></span></div>
-    <!-- 4个角色光点：阿里/妹妹/父亲/母亲 -->
-    <div class="din-person" style="left:12%;top:32%;" data-p="3" ontouchstart="dpStart(event,3)" onmousedown="dpStart(event,3)" ontouchend="dpEnd(event,3)" onmouseup="dpEnd(event,3)" onmouseleave="dpEnd(event,3)"><div class="dp-dot"></div></div>
-    <div class="din-person" style="left:35%;top:30%;" data-p="2" ontouchstart="dpStart(event,2)" onmousedown="dpStart(event,2)" ontouchend="dpEnd(event,2)" onmouseup="dpEnd(event,2)" onmouseleave="dpEnd(event,2)"><div class="dp-dot"></div></div>
-    <div class="din-person" style="left:60%;top:28%;" data-p="0" ontouchstart="dpStart(event,0)" onmousedown="dpStart(event,0)" ontouchend="dpEnd(event,0)" onmouseup="dpEnd(event,0)" onmouseleave="dpEnd(event,0)"><div class="dp-dot"></div></div>
-    <div class="din-person" style="left:84%;top:32%;" data-p="1" ontouchstart="dpStart(event,1)" onmousedown="dpStart(event,1)" ontouchend="dpEnd(event,1)" onmouseup="dpEnd(event,1)" onmouseleave="dpEnd(event,1)"><div class="dp-dot"></div></div>
+    <!-- 1个大光点，长按聆听家人心声 -->
+    <div class="din-person din-person-big" style="left:50%;top:30%;" ontouchstart="dpStart(event)" onmousedown="dpStart(event)" ontouchend="dpEnd(event)" onmouseup="dpEnd(event)" onmouseleave="dpEnd(event)"><div class="dp-dot dp-dot-big"></div></div>
     <!-- 独白弹出 -->
     <div class="din-mono" id="dinMono"></div>
   </div>
@@ -725,7 +724,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       <div class="air-msg"><div class="sdr">张伟（同事）</div><div class="txt">阿里，保重！新闻说中国特使已抵达中东斡旋。盼和平早日到来。</div></div>
     </div>
   </div>
-  <button class="next-arrow" id="airNext" onclick="goTo('scene-epilogue')">▼</button>
+  <button class="next-arrow" id="airNext" onclick="goTo('scene-epilogue')" style="display:none;">▼</button>
+</div>
+
+<!-- 结尾视频 -->
+<div class="scene video-full-scene" id="scene-ending">
+  <video src="H5图片素材/结尾.mp4" id="endingVideo" playsinline webkit-playsinline preload="metadata"></video>
 </div>
 
 <!-- 尾声 -->
@@ -744,7 +748,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       <div class="pcnt"><span id="peaceCnt">0</span>/20</div>
       <button class="pb" id="peaceBtn" onclick="makePoster()">🕊️ 放入漂流瓶</button>
     </div>
-    <a class="ext-lnk" onclick="alert('🎬 《战争与和平》动画新闻（此处为示意链接）')">观看动画《战争与和平》→</a>
     <div class="final-cr">本故事基于真实事件改编</div>
   </div>
 </div>
@@ -879,7 +882,7 @@ const SFX = {
    场景管理
    =================================================================== */
 let cur = 'scene-intro';
-const order = ['scene-intro','scene-album','scene-news','scene-dial','scene-carousel','scene-letter','scene-airport','scene-camp','scene-rubble','scene-home','scene-dinner','scene-airraid','scene-epilogue','scene-sea'];
+const order = ['scene-intro','scene-album','scene-tw1','scene-dial','scene-carousel','scene-tw2','scene-imagine','scene-letter','scene-airport','scene-camp','scene-rubble','scene-home','scene-dinner','scene-airraid','scene-ending','scene-epilogue','scene-sea'];
 
 function goTo(id){
   const next=document.getElementById(id);
@@ -895,14 +898,17 @@ function goTo(id){
   if(idx>=0)document.getElementById('progFill').style.width=Math.round(idx/(order.length-1)*100)+'%';
   SFX.click();
   // 场景初始化
-  if(id==='scene-album')initAlbum();
-  if(id==='scene-news')initNews();
+  if(id==='scene-album')initAlbumVideo();
+  if(id==='scene-tw1')startTypewriter('tw1Text','你的心纠成一团...',1500,()=>{setTimeout(()=>goTo('scene-dial'),1500)});
+  if(id==='scene-tw2')startTypewriter('tw2Text','你陷入沉思...',1300,()=>{setTimeout(()=>goTo('scene-imagine'),1500)});
+  if(id==='scene-imagine')initImagineVideo();
   if(id==='scene-carousel')initCarousel();
   if(id==='scene-camp')initCamp();
   if(id==='scene-rubble')initRubble();
   if(id==='scene-home')initHome();
   if(id==='scene-dinner')initDinner();
   if(id==='scene-airraid')initAirraid();
+  if(id==='scene-ending')initEndingVideo();
   if(id==='scene-epilogue')initEpi();
   if(id==='scene-sea')initSea();
 }
@@ -917,107 +923,61 @@ function startStory(){
 }
 
 /* ===================================================================
-   相册 - 左右滑动（3张照片）
+   视频场景 - 翻阅相册
    =================================================================== */
-let albumIdx=0,albumWarn=false;
-let albumStartX=0,albumDragX=0,albumDragging=false,albumOff=0;
-const ALBUM_THRESH=50;
-const ALBUM_TOTAL=3;
-
-function fitAlbumScreen(){
-  const img=document.getElementById('albumPhoneImg');
-  const ovl=document.getElementById('albumFrame');
-  if(!img||!ovl)return;
-  const ir=img.getBoundingClientRect(),ct=document.getElementById('albumContainer').getBoundingClientRect();
-  const rL=0.32,rT=0.34,rW=0.37,rH=0.30;
-  ovl.style.left=(ir.left-ct.left+ir.width*rL)+'px';
-  ovl.style.top=(ir.top-ct.top+ir.height*rT)+'px';
-  ovl.style.width=(ir.width*rW)+'px';
-  ovl.style.height=(ir.height*rH)+'px';
+function initAlbumVideo(){
+  const v=document.getElementById('albumVideo');
+  if(!v)return;
+  v.currentTime=0;
+  v.muted=false;
+  v.play().catch(()=>{});
+  v.onended=()=>{goTo('scene-tw1');};
 }
-window.addEventListener('resize',function(){if(cur==='scene-album')fitAlbumScreen()});
-
-function initAlbum(){
-  albumIdx=0;albumWarn=false;albumOff=0;
-  fitAlbumScreen();
-  setTimeout(fitAlbumScreen,300);
-  updateAlbum();
-  document.getElementById('albumNext').classList.remove('show');
-}
-function updateAlbum(snap){
-  const tr=document.getElementById('albumTrack');
-  tr.style.transition=snap===false?'none':'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-  const fw=tr.parentElement.clientWidth||300;
-  tr.style.transform='translateX(-'+(albumIdx*fw)+'px)';
-  if(albumIdx===ALBUM_TOTAL-1&&!albumWarn){
-    albumWarn=true;
-    SFX.vibrate([100,50,100,50,200]);
-    SFX.alarm();
-    setTimeout(()=>document.getElementById('albumNext').classList.add('show'),600);
-  }
-}
-// 触摸拖拽（横向）
-document.getElementById('albumFrame').addEventListener('touchstart',function(e){
-  if(albumIdx===ALBUM_TOTAL-1&&albumWarn)return;
-  albumStartX=e.touches[0].clientX;albumDragging=true;
-  updateAlbum(false);
-},{passive:true});
-document.getElementById('albumFrame').addEventListener('touchmove',function(e){
-  if(!albumDragging)return;
-  albumDragX=e.touches[0].clientX;albumOff=albumDragX-albumStartX;
-  let off=albumOff;
-  if((albumIdx===0&&off>0)||(albumIdx===ALBUM_TOTAL-1&&off<0))off*=0.3;
-  const tr=document.getElementById('albumTrack'),fw=tr.parentElement.clientWidth;
-  tr.style.transform='translateX('+(-albumIdx*fw+off)+'px)';
-},{passive:true});
-document.getElementById('albumFrame').addEventListener('touchend',function(){
-  if(!albumDragging)return;albumDragging=false;
-  if(Math.abs(albumOff)>ALBUM_THRESH){
-    if(albumOff<0&&albumIdx<ALBUM_TOTAL-1){albumIdx++;updateAlbum();SFX.click()}
-    else if(albumOff>0&&albumIdx>0){albumIdx--;updateAlbum();SFX.click()}
-    else updateAlbum();
-  }else updateAlbum();
-  albumOff=0;
-},{passive:true});
-// 鼠标拖拽（桌面）
-document.getElementById('albumFrame').addEventListener('mousedown',function(e){
-  if(albumIdx===ALBUM_TOTAL-1&&albumWarn)return;
-  albumStartX=e.clientX;albumDragging=true;
-  updateAlbum(false);e.preventDefault();
-});
-document.addEventListener('mousemove',function(e){
-  if(!albumDragging||cur!=='scene-album')return;
-  albumDragX=e.clientX;albumOff=albumDragX-albumStartX;
-  let off=albumOff;
-  if((albumIdx===0&&off>0)||(albumIdx===ALBUM_TOTAL-1&&off<0))off*=0.3;
-  const tr=document.getElementById('albumTrack'),fw=tr.parentElement.clientWidth;
-  tr.style.transform='translateX('+(-albumIdx*fw+off)+'px)';
-});
-document.addEventListener('mouseup',function(){
-  if(!albumDragging||cur!=='scene-album')return;albumDragging=false;
-  if(Math.abs(albumOff)>ALBUM_THRESH){
-    if(albumOff<0&&albumIdx<ALBUM_TOTAL-1){albumIdx++;updateAlbum();SFX.click()}
-    else if(albumOff>0&&albumIdx>0){albumIdx--;updateAlbum();SFX.click()}
-    else updateAlbum();
-  }else updateAlbum();
-  albumOff=0;
-});
 
 /* ===================================================================
-   新闻推送
+   视频场景 - 想象
    =================================================================== */
-function initNews(){
-  const cards=document.querySelectorAll('.news-card');
-  cards.forEach(c=>{
-    const d=parseInt(c.dataset.d);
-    setTimeout(()=>{
-      c.classList.add('show');SFX.notif();SFX.vibrate(80);
-      if(c===cards[cards.length-1]){
-        document.getElementById('newsGlow').classList.add('active');
-        setTimeout(()=>document.getElementById('newsNext').classList.add('show'),1000);
-      }
-    },d);
-  });
+function initImagineVideo(){
+  const v=document.getElementById('imagineVideo');
+  if(!v)return;
+  v.currentTime=0;
+  v.muted=false;
+  v.play().catch(()=>{});
+  v.onended=()=>{goTo('scene-letter');};
+}
+
+/* ===================================================================
+   视频场景 - 结尾
+   =================================================================== */
+function initEndingVideo(){
+  const v=document.getElementById('endingVideo');
+  if(!v)return;
+  v.currentTime=0;
+  v.muted=false;
+  v.play().catch(()=>{});
+  v.onended=()=>{goTo('scene-epilogue');};
+}
+
+/* ===================================================================
+   黑幕打字机效果
+   =================================================================== */
+function startTypewriter(elId,text,duration,callback){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  el.innerHTML='<span class="tw-cursor"></span>';
+  const totalChars=text.length;
+  const interval=duration/totalChars;
+  let i=0;
+  const timer=setInterval(()=>{
+    if(i>=totalChars){
+      clearInterval(timer);
+      el.innerHTML=text+'<span class="tw-cursor"></span>';
+      if(callback)callback();
+      return;
+    }
+    i++;
+    el.innerHTML=text.substring(0,i)+'<span class="tw-cursor"></span>';
+  },interval);
 }
 
 /* ===================================================================
@@ -1185,25 +1145,37 @@ function showCP(i){
 }
 
 /* ===================================================================
-   路障
+   路障 — 手指滑动清扫
    =================================================================== */
-let rblN=12;
+let rblN=12, rblSweeping=false;
+
 function initRubble(){
-  rblN=12;
-  const p=document.getElementById('rblPile');p.innerHTML='';
+  rblN=12; rblSweeping=false;
+  const pile=document.getElementById('rblPile');pile.innerHTML='';
   for(let i=0;i<12;i++){
     const e=document.createElement('div');e.className='rbl-p';
     e.style.left=(8+Math.random()*78)+'%';e.style.top=(8+Math.random()*75)+'%';
     e.style.setProperty('--r',Math.random()*360+'deg');e.dataset.i=i;
-    e.addEventListener('click',function(){clrRbl(this)});
-    p.appendChild(e);
+    pile.appendChild(e);
   }
   document.getElementById('rblFill').style.width='0%';
   document.getElementById('rblRem').textContent='剩余 12 块';
   document.getElementById('rblDone').style.display='none';
   document.getElementById('rblNext').classList.remove('show');
-  document.getElementById('rblTxt').textContent='道路被瓦砾阻挡，点击清理';
+  document.getElementById('rblTxt').textContent='道路被瓦砾阻挡，手指滑动清扫';
 }
+
+function sweepAtPoint(clientX,clientY){
+  const pile=document.getElementById('rblPile');
+  const stones=pile.querySelectorAll('.rbl-p:not(.clr)');
+  stones.forEach(s=>{
+    const r=s.getBoundingClientRect();
+    if(clientX>=r.left&&clientX<=r.right&&clientY>=r.top&&clientY<=r.bottom){
+      clrRbl(s);
+    }
+  });
+}
+
 function clrRbl(el){
   if(el.classList.contains('clr'))return;
   el.classList.add('clr');SFX.click();SFX.vibrate(30);
@@ -1216,6 +1188,48 @@ function clrRbl(el){
     document.getElementById('rblNext').classList.add('show');
   }
 }
+
+// 滑动清扫事件绑定（在首次进入场景时绑定一次）
+(function bindRubbleSwipe(){
+  const pile=document.getElementById('rblPile');
+
+  pile.addEventListener('mousedown',function(e){
+    if(cur!=='scene-rubble')return;
+    rblSweeping=true;
+    sweepAtPoint(e.clientX,e.clientY);
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove',function(e){
+    if(!rblSweeping||cur!=='scene-rubble')return;
+    sweepAtPoint(e.clientX,e.clientY);
+  });
+
+  document.addEventListener('mouseup',function(){
+    rblSweeping=false;
+  });
+
+  pile.addEventListener('touchstart',function(e){
+    if(cur!=='scene-rubble')return;
+    rblSweeping=true;
+    const t=e.touches[0];
+    sweepAtPoint(t.clientX,t.clientY);
+  },{passive:true});
+
+  pile.addEventListener('touchmove',function(e){
+    if(!rblSweeping||cur!=='scene-rubble')return;
+    const t=e.touches[0];
+    sweepAtPoint(t.clientX,t.clientY);
+  },{passive:true});
+
+  pile.addEventListener('touchend',function(){
+    rblSweeping=false;
+  });
+
+  pile.addEventListener('touchcancel',function(){
+    rblSweeping=false;
+  });
+})();
 
 /* ===================================================================
    破损的家（全景拖拽）
@@ -1299,7 +1313,7 @@ document.addEventListener('click',function(e){
 });
 
 /* ===================================================================
-   晚餐 - 四人长按独白（1秒 + 声波）
+   晚餐 - 大光点长按1秒后，从左到右依次播放心声（每条5.5秒）
    =================================================================== */
 const DVOICES=[
   {speaker:'父亲',text:'家还在、人还在，可往日的安宁没了，只希望战火快点停下，让日子回归平常。'},
@@ -1307,26 +1321,43 @@ const DVOICES=[
   {speaker:'妹妹',text:'婚礼取消了、窗户碎了，只要家人都活着就有希望，可我再也不想听到空袭警报。'},
   {speaker:'阿里',text:'我穿越6000公里归家，以为能让一切回到从前，可有些东西像破碎的窗户，再也拼不回原样。'}
 ];
-let dpTimer=null,dpOn=null,dpSeen=0;
+let dpTimer=null, dpSeqTimer=null, dpSeen=0, dpSeqRunning=false;
 
 function initDinner(){
-  dpSeen=0;
+  dpSeen=0; dpSeqRunning=false;
+  clearInterval(dpTimer);dpTimer=null;
+  clearTimeout(dpSeqTimer);dpSeqTimer=null;
   document.getElementById('dinMono').style.display='none';
   document.getElementById('dinWave').classList.remove('active');
   document.getElementById('dinNext').classList.remove('show');
 }
-function dpStart(e,p){
-  if(cur!=='scene-dinner')return;
-  dpOn=p;
+function dpStart(e){
+  if(cur!=='scene-dinner'||dpSeqRunning)return;
   let t=0;
   clearInterval(dpTimer);
   dpTimer=setInterval(()=>{
     t+=0.1;
-    if(t>=1){clearInterval(dpTimer);showVoice(p)} // 1秒触发
+    if(t>=1){clearInterval(dpTimer);playVoiceSequence()}
   },100);
 }
-function dpEnd(e,p){
-  clearInterval(dpTimer);dpTimer=null;dpOn=null;
+function dpEnd(e){
+  clearInterval(dpTimer);dpTimer=null;
+}
+function playVoiceSequence(){
+  dpSeqRunning=true;
+  let idx=0;
+  function showNext(){
+    if(idx>=DVOICES.length){
+      dpSeqRunning=false;
+      document.getElementById('dinNext').classList.add('show');
+      setTimeout(()=>document.getElementById('dinWave').classList.remove('active'),500);
+      return;
+    }
+    showVoice(idx);
+    idx++;
+    dpSeqTimer=setTimeout(showNext,5500);
+  }
+  showNext();
 }
 function showVoice(p){
   SFX.click();
@@ -1334,9 +1365,7 @@ function showVoice(p){
   m.style.display='block';
   m.innerHTML='<div class="dm-speaker">'+DVOICES[p].speaker+'的心声</div><div class="dm-text">'+DVOICES[p].text+'</div>';
   w.classList.add('active');
-  setTimeout(()=>w.classList.remove('active'),3000);
   dpSeen|=(1<<p);
-  if(dpSeen===15)document.getElementById('dinNext').classList.add('show');
 }
 
 /* ===================================================================
@@ -1363,13 +1392,13 @@ function dodgeOK(){
   document.getElementById('airTxt').textContent='✓ 安全了...';
   document.getElementById('airRes').style.display='block';
   document.getElementById('airOverlay').style.display='none';
-  setTimeout(()=>document.getElementById('airNext').classList.add('show'),2000);
+  setTimeout(()=>goTo('scene-ending'),1800);
 }
 function dodgeFail(){
   SFX.vibrate(400);
   document.getElementById('airTxt').textContent='💥 ...';
   document.getElementById('airBtn').classList.add('hide');
-  setTimeout(()=>{document.getElementById('airRes').style.display='block';setTimeout(()=>document.getElementById('airNext').classList.add('show'),2000)},1000);
+  setTimeout(()=>{document.getElementById('airRes').style.display='block';setTimeout(()=>goTo('scene-ending'),1800)},1000);
 }
 
 /* ===================================================================
@@ -1509,10 +1538,10 @@ document.addEventListener('click',function(e){
     const s=document.styleSheets[0];
     try{
       const sceneOrders={
-        'scene-album':'fromRight','scene-news':'fromBottom','scene-dial':'fromLeft',
-        'scene-carousel':'fromTop','scene-letter':'fromRight','scene-airport':'fromBottom',
+        'scene-album':'fromRight','scene-tw1':'fromBottom','scene-dial':'fromLeft',
+        'scene-carousel':'fromTop','scene-tw2':'fromRight','scene-imagine':'fromBottom','scene-letter':'fromRight','scene-airport':'fromBottom',
         'scene-camp':'fromLeft','scene-rubble':'fromTop','scene-home':'fromRight',
-        'scene-dinner':'fromLeft','scene-airraid':'fromBottom','scene-epilogue':'fromTop','scene-sea':'fromBottom'
+        'scene-dinner':'fromLeft','scene-airraid':'fromBottom','scene-ending':'fromBottom','scene-epilogue':'fromTop','scene-sea':'fromBottom'
       };
       // 通过CSS变量控制入场方向已足够
     }catch(e){}
