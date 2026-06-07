@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -527,18 +526,35 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 <!-- 序幕 · 相册 -->
 <div class="scene" id="scene-album">
   <div class="scene-title">序幕 · 上海</div>
-  <div class="album-container" style="width:100%;height:100%;">
-    <video 
-      src="H5图片素材/翻阅相册.mp4" 
-      muted 
-      playsinline 
-      webkit-playsinline 
-      preload="auto" 
-      id="albumVideo"
-      style="width:100%;height:100%;object-fit:cover;"
-      onended="onAlbumVideoEnd()"
-    ></video>
+  <div class="album-container" id="albumContainer">
+    <img class="album-phone-img" src="H5图片素材/1-2.webp" id="albumPhoneImg" alt="" onload="fitAlbumScreen()">
+    <div class="album-screen-area" id="albumFrame">
+      <div class="album-track" id="albumTrack">
+        <div class="album-photo"><img src="H5图片素材/全家福.webp" alt="全家福"><div class="photo-caption">全家福 · 伊朗设拉子</div></div>
+        <div class="album-photo"><img src="H5图片素材/办公照.webp" alt="办公照"><div class="photo-caption">项目现场 · 上海第3年</div></div>
+                <div class="album-photo" id="warPhoto"><img src="H5图片素材/同事聚餐.webp" alt="聚餐"><div class="photo-caption" style="color:#e74c3c;">2026年3月 · 同事聚餐（战争前夜）</div></div>
+      </div>
+    </div>
+    <div class="album-hint" id="albumHint">← → 滑动相册</div>
   </div>
+  <button class="next-arrow" id="albumNext" onclick="goTo('scene-news')">▼</button>
+</div>
+
+<!-- 新闻推送 -->
+<div class="scene" id="scene-news">
+  <div class="scene-title">新闻推送</div>
+  <div class="phone-frame">
+    <div class="phone-screen" style="background:#f2f2f7;">
+      <div class="phone-island"><div class="pi-spkr"></div><div class="pi-cam"></div></div>
+      <div class="news-container" id="newsWrap" style="padding-top:2.2rem;">
+        <div class="news-card" data-d="0"><div class="nt">23:15</div><div class="nh">快讯：美以对伊朗发动"斩首行动"，德黑兰附近传出爆炸声</div><div class="ns">来源：半岛电视台</div></div>
+        <div class="news-card" data-d="900"><div class="nt">23:17</div><div class="nh">最新：德黑兰、伊斯法罕、大不里士等多地遭空袭</div><div class="ns">来源：BBC波斯语</div></div>
+        <div class="news-card" data-d="1800"><div class="nt">23:20</div><div class="nh">突发：伊朗宣布关闭霍尔木兹海峡，国际油价暴涨</div><div class="ns">来源：路透社</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="news-glow" id="newsGlow"></div>
+  <button class="next-arrow" id="newsNext" onclick="goTo('scene-dial')">▼</button>
 </div>
 
 <!-- 拨号 -->
@@ -649,7 +665,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 <div class="scene" id="scene-rubble">
   <div class="scene-title">穿越边境</div>
   <div class="rbl-wrap">
-    <div class="rbl-txt" id="rblTxt">道路被瓦砾阻挡<br><small style="opacity:0.6">沿着虚线滑动手指清扫</small></div>
+    <div class="rbl-txt" id="rblTxt">道路被瓦砾阻挡，点击清理</div>
     <div class="rbl-pile" id="rblPile"></div>
     <div class="rbl-bar"><div class="rbl-fill" id="rblFill"></div></div>
     <div class="rbl-rem" id="rblRem">剩余 12 块</div>
@@ -658,6 +674,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       <p>道路已清通，前方就是伊朗边境哨所。</p>
     </div>
   </div>
+  <button class="next-arrow" id="rblNext" onclick="goTo('scene-home')">▼</button>
 </div>
 
 <!-- 破损的家（全景拖拽） -->
@@ -683,10 +700,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
   <div class="scene-title">晚餐</div>
   <div class="din-wrap">
     <div class="din-hint" id="dinHint">长按光点聆听人物心声</div>
+    <!-- 声波动画 -->
     <div class="din-wave" id="dinWave"><span></span><span></span><span></span><span></span><span></span></div>
-    <div class="din-person" style="left:50%;top:32%;" id="dinCenter" ontouchstart="dpStart(event)" onmousedown="dpStart(event)" ontouchend="dpEnd(event)" onmouseup="dpEnd(event)" onmouseleave="dpEnd(event)"><div class="dp-dot"></div></div>
+    <!-- 4个角色光点：阿里/妹妹/父亲/母亲 -->
+    <div class="din-person" style="left:12%;top:32%;" data-p="3" ontouchstart="dpStart(event,3)" onmousedown="dpStart(event,3)" ontouchend="dpEnd(event,3)" onmouseup="dpEnd(event,3)" onmouseleave="dpEnd(event,3)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:35%;top:30%;" data-p="2" ontouchstart="dpStart(event,2)" onmousedown="dpStart(event,2)" ontouchend="dpEnd(event,2)" onmouseup="dpEnd(event,2)" onmouseleave="dpEnd(event,2)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:60%;top:28%;" data-p="0" ontouchstart="dpStart(event,0)" onmousedown="dpStart(event,0)" ontouchend="dpEnd(event,0)" onmouseup="dpEnd(event,0)" onmouseleave="dpEnd(event,0)"><div class="dp-dot"></div></div>
+    <div class="din-person" style="left:84%;top:32%;" data-p="1" ontouchstart="dpStart(event,1)" onmousedown="dpStart(event,1)" ontouchend="dpEnd(event,1)" onmouseup="dpEnd(event,1)" onmouseleave="dpEnd(event,1)"><div class="dp-dot"></div></div>
+    <!-- 独白弹出 -->
     <div class="din-mono" id="dinMono"></div>
   </div>
+  <button class="next-arrow" id="dinNext" onclick="goTo('scene-airraid')">▼</button>
 </div>
 
 <!-- 空袭 -->
@@ -720,6 +744,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       <div class="pcnt"><span id="peaceCnt">0</span>/20</div>
       <button class="pb" id="peaceBtn" onclick="makePoster()">🕊️ 放入漂流瓶</button>
     </div>
+    <a class="ext-lnk" onclick="alert('🎬 《战争与和平》动画新闻（此处为示意链接）')">观看动画《战争与和平》→</a>
     <div class="final-cr">本故事基于真实事件改编</div>
   </div>
 </div>
@@ -999,24 +1024,24 @@ function initNews(){
    拨号
    =================================================================== */
 let dialC=0;
-function doDial() {
-    SFX.dialTone();
-    const st=document.getElementById('dialStatus'), btn=document.getElementById('dialBtn');
-    dialC++;
-    if(dialC===1) {
-        st.textContent='呼叫中...'; st.className='dial-status';
-        setTimeout(()=>{ st.textContent='对方暂时无法接通'; st.className='dial-status err'; },1800);
-    } else if(dialC===2) {
-        st.textContent='重新呼叫...'; st.className='dial-status';
-        SFX.busy();
-        setTimeout(()=>{ st.textContent='您拨打的用户不在服务区'; st.className='dial-status err'; },1800);
-    } else {
-        st.textContent='📵 无法接通...'; st.className='dial-status err';
-        btn.classList.add('done');
-        document.getElementById('bloodOverlay').classList.add('show');
-        SFX.vibrate([200,100,200]);
-        setTimeout(() => { goTo('scene-carousel'); }, 2500);
-    }
+function doDial(){
+  SFX.dialTone();
+  const st=document.getElementById('dialStatus'),btn=document.getElementById('dialBtn');
+  dialC++;
+  if(dialC===1){
+    st.textContent='呼叫中...';st.className='dial-status';
+    setTimeout(()=>{st.textContent='对方暂时无法接通';st.className='dial-status err'},1800);
+  }else if(dialC===2){
+    st.textContent='重新呼叫...';st.className='dial-status';
+    SFX.busy();
+    setTimeout(()=>{st.textContent='您拨打的用户不在服务区';st.className='dial-status err'},1800);
+  }else{
+    st.textContent='📵 无法接通...';st.className='dial-status err';
+    btn.classList.add('done');
+    document.getElementById('bloodOverlay').classList.add('show');
+    SFX.vibrate([200,100,200]);
+    setTimeout(()=>document.getElementById('dialNext').classList.add('show'),2500);
+  }
 }
 
 /* ===================================================================
@@ -1105,23 +1130,27 @@ document.addEventListener('mouseup',function(){
 /* ===================================================================
    辞职
    =================================================================== */
-function mailSend() {
+function mailSend(){
+  SFX.click();
+  // 隐藏表单
+  document.getElementById('mailForm').style.display='none';
+  const stage=document.getElementById('envStage'),icon=document.getElementById('envIcon');
+  stage.classList.add('active');
+  // 信封关闭动画
+  setTimeout(()=>{icon.classList.add('closing');},100);
+  // 关闭完成后显示机票
+  setTimeout(()=>{
+    icon.style.display='none';
+    document.getElementById('envTicket').classList.add('show');
+    document.getElementById('ltrNext').classList.add('show');
     SFX.click();
-    document.getElementById('mailForm').style.display='none';
-    const stage=document.getElementById('envStage'), icon=document.getElementById('envIcon');
-    stage.classList.add('active');
-    setTimeout(()=>{ icon.classList.add('closing'); },100);
-    setTimeout(()=>{
-        icon.style.display='none';
-        document.getElementById('envTicket').classList.add('show');
-        SFX.click();
-        setTimeout(() => { goTo('scene-airport'); }, 2000);
-    },750);
+  },750);
 }
-function mailCancel() {
-    SFX.click();
-    document.getElementById('mailForm').style.opacity='0.4';
-    setTimeout(()=>{ alert('邮件已保存为草稿。但窗外，回家心切……阿里最终点击了发送。'); mailSend(); },1200);
+function mailCancel(){
+  SFX.click();
+  document.getElementById('ltrNext').classList.add('show');
+  document.getElementById('mailForm').style.opacity='0.4';
+  setTimeout(()=>{alert('邮件已保存为草稿。但窗外，回家心切……阿里最终点击了发送。');mailSend();},1200);
 }
 
 /* ===================================================================
@@ -1272,57 +1301,42 @@ document.addEventListener('click',function(e){
 /* ===================================================================
    晚餐 - 四人长按独白（1秒 + 声波）
    =================================================================== */
-const DVOICES = [
-    {speaker:'父亲', text:'家还在、人还在，可往日的安宁没了，只希望战火快点停下，让日子回归平常。'},
-    {speaker:'母亲', text:'你能平安回来就够了，我不求别的，只盼一家人再也不用躲在地下室担惊受怕。'},
-    {speaker:'妹妹', text:'婚礼取消了、窗户碎了，只要家人都活着就有希望，可我再也不想听到空袭警报。'},
-    {speaker:'阿里', text:'我穿越6000公里归家，以为能让一切回到从前，可有些东西像破碎的窗户，再也拼不回原样。'}
+const DVOICES=[
+  {speaker:'父亲',text:'家还在、人还在，可往日的安宁没了，只希望战火快点停下，让日子回归平常。'},
+  {speaker:'母亲',text:'你能平安回来就够了，我不求别的，只盼一家人再也不用躲在地下室担惊受怕。'},
+  {speaker:'妹妹',text:'婚礼取消了、窗户碎了，只要家人都活着就有希望，可我再也不想听到空袭警报。'},
+  {speaker:'阿里',text:'我穿越6000公里归家，以为能让一切回到从前，可有些东西像破碎的窗户，再也拼不回原样。'}
 ];
-let dpTimer = null, dpVoiceIdx = 0, dpVoiceTimer = null, dpTriggered = false;
+let dpTimer=null,dpOn=null,dpSeen=0;
 
-function initDinner() {
-    dpTriggered = false; dpVoiceIdx = 0;
-    clearInterval(dpTimer); clearTimeout(dpVoiceTimer);
-    document.getElementById('dinMono').style.display = 'none';
-    document.getElementById('dinWave').classList.remove('active');
+function initDinner(){
+  dpSeen=0;
+  document.getElementById('dinMono').style.display='none';
+  document.getElementById('dinWave').classList.remove('active');
+  document.getElementById('dinNext').classList.remove('show');
 }
-
-function dpStart(e) {
-    if(cur !== 'scene-dinner' || dpTriggered) return;
-    let t = 0;
-    clearInterval(dpTimer);
-    dpTimer = setInterval(() => {
-        t += 0.1;
-        if(t >= 1) { clearInterval(dpTimer); triggerVoiceSeq(); }
-    }, 100);
+function dpStart(e,p){
+  if(cur!=='scene-dinner')return;
+  dpOn=p;
+  let t=0;
+  clearInterval(dpTimer);
+  dpTimer=setInterval(()=>{
+    t+=0.1;
+    if(t>=1){clearInterval(dpTimer);showVoice(p)} // 1秒触发
+  },100);
 }
-
-function dpEnd(e) {
-    clearInterval(dpTimer); dpTimer = null;
+function dpEnd(e,p){
+  clearInterval(dpTimer);dpTimer=null;dpOn=null;
 }
-
-function triggerVoiceSeq() {
-    if(dpTriggered) return;
-    dpTriggered = true;
-    dpVoiceIdx = 0;
-    playNextVoice();
-}
-
-function playNextVoice() {
-    if(dpVoiceIdx >= DVOICES.length) {
-        // 自动跳转下一场景
-        if(window._autoTimer) clearTimeout(window._autoTimer);
-        setTimeout(() => { goTo('scene-airraid'); }, 2000);
-        return;
-    }
-    SFX.click();
-    const m = document.getElementById('dinMono'), w = document.getElementById('dinWave');
-    m.style.display = 'block';
-    m.innerHTML = '<div class="dm-speaker">'+DVOICES[dpVoiceIdx].speaker+'的心声</div><div class="dm-text">'+DVOICES[dpVoiceIdx].text+'</div>';
-    w.classList.add('active');
-    setTimeout(() => w.classList.remove('active'), 3000);
-    dpVoiceIdx++;
-    dpVoiceTimer = setTimeout(() => playNextVoice(), 6000);
+function showVoice(p){
+  SFX.click();
+  const m=document.getElementById('dinMono'),w=document.getElementById('dinWave');
+  m.style.display='block';
+  m.innerHTML='<div class="dm-speaker">'+DVOICES[p].speaker+'的心声</div><div class="dm-text">'+DVOICES[p].text+'</div>';
+  w.classList.add('active');
+  setTimeout(()=>w.classList.remove('active'),3000);
+  dpSeen|=(1<<p);
+  if(dpSeen===15)document.getElementById('dinNext').classList.add('show');
 }
 
 /* ===================================================================
