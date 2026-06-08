@@ -563,7 +563,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       </div>
     </div>
   </div>
-  <button class="next-arrow" id="dialNext" onclick="goTo('scene-carousel')">▼</button>
+
 </div>
 
 <!-- 卡片轮播 -->
@@ -632,7 +632,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       </div>
     </div>
   </div>
-  <button class="next-arrow" id="ltrNext" onclick="goTo('scene-airport')">▼</button>
+
 </div>
 
 <!-- 机场 -->
@@ -660,7 +660,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
       <div class="camp-pop" id="campPop"></div>
     </div>
   </div>
-  <button class="next-arrow show" onclick="goTo('scene-rubble')">▼</button>
+
 </div>
 
 <!-- 路障 -->
@@ -701,15 +701,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#050505;color:var(--
 <div class="scene" id="scene-dinner">
   <div class="scene-title">晚餐</div>
   <div class="din-wrap">
-    <div class="din-hint" id="dinHint">长按光点聆听人物心声</div>
+    <div class="din-hint" id="dinHint">人物心声</div>
     <!-- 声波动画 -->
     <div class="din-wave" id="dinWave"><span></span><span></span><span></span><span></span><span></span></div>
-    <!-- 1个大光点，长按聆听家人心声 -->
-    <div class="din-person din-person-big" style="left:50%;top:30%;" ontouchstart="dpStart(event)" onmousedown="dpStart(event)" ontouchend="dpEnd(event)" onmouseup="dpEnd(event)" onmouseleave="dpEnd(event)"><div class="dp-dot dp-dot-big"></div></div>
     <!-- 独白弹出 -->
     <div class="din-mono" id="dinMono"></div>
   </div>
-  <button class="next-arrow" id="dinNext" onclick="goTo('scene-airraid')">▼</button>
+
 </div>
 
 <!-- 空袭 -->
@@ -1000,7 +998,7 @@ function doDial(){
     btn.classList.add('done');
     document.getElementById('bloodOverlay').classList.add('show');
     SFX.vibrate([200,100,200]);
-    setTimeout(()=>document.getElementById('dialNext').classList.add('show'),2500);
+    setTimeout(()=>goTo('scene-carousel'),2500);
   }
 }
 
@@ -1102,13 +1100,12 @@ function mailSend(){
   setTimeout(()=>{
     icon.style.display='none';
     document.getElementById('envTicket').classList.add('show');
-    document.getElementById('ltrNext').classList.add('show');
     SFX.click();
+    setTimeout(()=>goTo('scene-airport'),2000);
   },750);
 }
 function mailCancel(){
   SFX.click();
-  document.getElementById('ltrNext').classList.add('show');
   document.getElementById('mailForm').style.opacity='0.4';
   setTimeout(()=>{alert('邮件已保存为草稿。但窗外，回家心切……阿里最终点击了发送。');mailSend();},1200);
 }
@@ -1127,14 +1124,30 @@ const CP=[
   {t:'侯赛因爷爷',b:'71岁，儿子在空袭中失踪，他带着两个孙子徒步三天到达边境。"不知道明天会怎样，但孩子们得活着。"'}
 ];
 let cpActive=-1;
+let campAutoTimer=null;
 function initCamp(){
   document.querySelectorAll('.camp-dot').forEach(d=>{
     d.addEventListener('mouseenter',function(){showCP(parseInt(this.dataset.i))});
     d.addEventListener('touchstart',function(e){e.preventDefault();showCP(parseInt(this.dataset.i))});
   });
-  // 进入场景时重置热点状态
+  // 重置热点状态与自动播放
   cpActive = -1;
   document.getElementById('campPop').style.display = 'none';
+  document.querySelectorAll('.camp-dot').forEach(h=>h.classList.remove('active'));
+  clearTimeout(campAutoTimer);
+  // 从上到下自动播放：依次展示每个热点内容
+  let campIdx = 0;
+  function autoNext(){
+    if(cur!=='scene-camp')return;
+    if(campIdx>=CP.length){
+      campAutoTimer=setTimeout(()=>goTo('scene-rubble'),3000);
+      return;
+    }
+    showCP(campIdx);
+    campIdx++;
+    campAutoTimer=setTimeout(autoNext,4000);
+  }
+  campAutoTimer=setTimeout(autoNext,500);
 }
 function showCP(i){
   if(i===cpActive)return;cpActive=i;SFX.click();
@@ -1313,7 +1326,7 @@ document.addEventListener('click',function(e){
 });
 
 /* ===================================================================
-   晚餐 - 大光点长按1秒后，从左到右依次播放心声（每条5.5秒）
+   晚餐 - 进入场景1秒后自动依次播放心声（每条5.5秒）
    =================================================================== */
 const DVOICES=[
   {speaker:'父亲',text:'家还在、人还在，可往日的安宁没了，只希望战火快点停下，让日子回归平常。'},
@@ -1329,7 +1342,11 @@ function initDinner(){
   clearTimeout(dpSeqTimer);dpSeqTimer=null;
   document.getElementById('dinMono').style.display='none';
   document.getElementById('dinWave').classList.remove('active');
-  document.getElementById('dinNext').classList.remove('show');
+  // 晚餐场景自动播放完毕后直接跳转，无需手动 next 按钮
+  // 进入页面1秒后自动按顺序播放
+  dpSeqTimer=setTimeout(()=>{
+    if(cur==='scene-dinner'&&!dpSeqRunning)playVoiceSequence();
+  },1000);
 }
 function dpStart(e){
   if(cur!=='scene-dinner'||dpSeqRunning)return;
@@ -1349,8 +1366,8 @@ function playVoiceSequence(){
   function showNext(){
     if(idx>=DVOICES.length){
       dpSeqRunning=false;
-      document.getElementById('dinNext').classList.add('show');
       setTimeout(()=>document.getElementById('dinWave').classList.remove('active'),500);
+      setTimeout(()=>goTo('scene-airraid'),1500);
       return;
     }
     showVoice(idx);
